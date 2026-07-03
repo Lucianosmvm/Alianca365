@@ -1,0 +1,1357 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#5b4bd6">
+<title>Aliança 365</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" type="image/png" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Aliança 365">
+<meta name="mobile-web-app-capable" content="yes">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+:root{
+  --roxo:#5b4bd6; --roxo2:#6d5ae6; --rosa:#e35d94; --ambr:#c07d1a;
+  --verde:#159a5b; --azul:#3b7fe0; --bg:#fafafa; --card:#ffffff;
+  --card2:#f5f5f7; --txt:#1d1d20; --sub:#8a8a90; --linha:#ececee;
+  --ok:#159a5b; --sombra:0 1px 2px rgba(20,20,40,.04);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  background:var(--bg);color:var(--txt);line-height:1.55;overscroll-behavior:none;
+  -webkit-font-smoothing:antialiased;
+}
+#app{max-width:520px;margin:0 auto;min-height:100%;padding-bottom:84px;position:relative;background:var(--bg)}
+.hidden{display:none!important}
+
+/* Header */
+.top{
+  position:sticky;top:0;z-index:20;
+  background:rgba(250,250,250,.85);backdrop-filter:saturate(180%) blur(14px);
+  padding:18px 20px 16px;border-bottom:1px solid var(--linha);
+}
+.top .marca{display:flex;align-items:center;gap:7px;font-weight:700;font-size:11px;letter-spacing:1.5px;color:var(--sub);text-transform:uppercase}
+.top h1{font-size:24px;font-weight:700;margin-top:6px;letter-spacing:-.3px;display:flex;align-items:center;gap:8px}
+.top .streak{
+  margin-top:12px;display:inline-flex;align-items:center;gap:6px;
+  background:var(--card2);color:var(--txt);padding:5px 12px;border-radius:20px;font-weight:600;font-size:13px;border:1px solid var(--linha);
+}
+.top .data{font-size:13px;color:var(--sub);margin-top:8px;text-transform:capitalize}
+
+/* Cards */
+.wrap{padding:16px}
+.card{
+  background:var(--card);border:1px solid var(--linha);border-radius:16px;
+  padding:18px;margin-bottom:12px;box-shadow:var(--sombra);
+}
+.card h2{font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px;margin-bottom:2px;letter-spacing:-.2px}
+.card .badge{font-size:11px;color:var(--sub);font-weight:400}
+.pilar{position:relative;padding-left:18px}
+.pilar:before{content:"";position:absolute;left:0;top:16px;bottom:16px;width:3px;border-radius:3px;background:var(--roxo2)}
+.pilar.casal:before{background:var(--rosa)}
+.pilar.familia:before{background:var(--ambr)}
+.pilar.filhos:before{background:var(--azul)}
+.pilar.oracao:before{background:var(--verde)}
+.pilar.palavra:before{background:var(--roxo2)}
+.pilar.gratidao:before{background:#b18cf0}
+.tarefa{font-size:16px;margin:8px 0;font-weight:500;letter-spacing:-.2px}
+.verso{font-style:italic;font-size:18px;margin:8px 0;color:#33333a;line-height:1.5}
+.ref{font-size:13px;color:var(--roxo);font-weight:600}
+.subtxt{color:var(--sub);font-size:13px}
+
+/* Botões */
+button,.btn{
+  font-family:inherit;cursor:pointer;border:none;border-radius:11px;
+  font-weight:600;font-size:14px;transition:.15s;
+}
+.btn-primary{background:var(--roxo);color:#fff;padding:12px 16px;width:100%;letter-spacing:-.2px}
+.btn-primary:hover{background:#4d3fc4}
+.btn-primary:active{transform:scale(.985)}
+.btn-primary:disabled{opacity:.55;cursor:default}
+.btn-ok{background:var(--verde);color:#fff;padding:9px 14px}
+.btn-ghost{background:var(--card);color:var(--txt);padding:10px 14px;border:1px solid var(--linha)}
+.btn-ghost:hover{background:var(--card2)}
+.btn-mini{background:var(--card2);color:var(--txt);padding:7px 11px;font-size:12px;border:1px solid var(--linha)}
+.done{opacity:.5}
+.check{display:inline-flex;width:24px;height:24px;border-radius:50%;border:1.5px solid #d0d0d4;align-items:center;justify-content:center;margin-right:10px;font-size:13px;flex:0 0 auto;transition:.15s}
+.check.on{background:var(--verde);border-color:var(--verde);color:#fff}
+.linha-tarefa{display:flex;align-items:flex-start;cursor:pointer;padding:4px 0}
+
+/* Inputs */
+input,textarea,select{
+  font-family:inherit;font-size:15px;width:100%;padding:11px 13px;border-radius:11px;
+  background:var(--card);border:1px solid var(--linha);color:var(--txt);margin-top:6px;transition:.15s;
+}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--roxo2);box-shadow:0 0 0 3px rgba(109,90,230,.12)}
+textarea{resize:vertical;min-height:70px}
+label{font-size:13px;color:var(--sub);font-weight:500}
+.row{display:flex;gap:8px}
+.row>*{flex:1}
+
+/* Nav inferior */
+.nav{
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;
+  background:rgba(255,255,255,.9);backdrop-filter:saturate(180%) blur(14px);border-top:1px solid var(--linha);
+  display:flex;justify-content:space-around;padding:8px 4px 10px;z-index:30;
+}
+.nav button{background:none;color:var(--sub);display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:500;flex:1;padding:4px}
+.nav button .ic{font-size:20px;opacity:.7;transition:.15s}
+.nav button.on{color:var(--roxo)}
+.nav button.on .ic{opacity:1}
+
+/* Membros / chips */
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--card2);border:1px solid var(--linha);padding:6px 11px;border-radius:20px;font-size:13px;margin:4px 4px 0 0}
+.chip .x{color:var(--rosa);font-weight:700;cursor:pointer}
+
+/* Conquistas */
+.conq-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.conq{background:var(--card);border:1px solid var(--linha);border-radius:14px;padding:14px;text-align:center;position:relative}
+.conq.locked{opacity:.45;filter:grayscale(1)}
+.conq .emoji{font-size:28px}
+.conq .nome{font-size:12px;font-weight:600;margin-top:6px}
+.conq .prog{font-size:11px;color:var(--sub);margin-top:4px}
+.barra{height:5px;background:var(--linha);border-radius:5px;margin-top:6px;overflow:hidden}
+.barra>span{display:block;height:100%;background:var(--roxo);border-radius:5px}
+
+/* Timeline */
+.tl-item{display:flex;gap:12px;padding:2px 0}
+.tl-linha{display:flex;flex-direction:column;align-items:center}
+.tl-dot{width:11px;height:11px;border-radius:50%;background:var(--roxo);margin-top:8px;flex:0 0 auto;border:2px solid var(--card);box-shadow:0 0 0 1px var(--roxo2)}
+.tl-bar{width:2px;flex:1;background:var(--linha);margin:4px 0}
+.tl-conteudo{background:var(--card);border:1px solid var(--linha);border-radius:12px;padding:12px 14px;margin-bottom:10px;flex:1}
+.tl-data{font-size:11px;color:var(--sub)}
+.tl-foto{width:100%;border-radius:10px;margin-top:8px;max-height:220px;object-fit:cover}
+
+/* Diário entradas */
+.diario-e{background:var(--card);border:1px solid var(--linha);border-radius:12px;padding:12px 14px;margin-top:8px}
+.diario-e .quem{font-size:12px;font-weight:700;color:var(--roxo)}
+.diario-e .data{font-size:11px;color:var(--sub);float:right}
+
+/* IA */
+.ia-resp{background:var(--card2);border:1px solid var(--linha);border-radius:14px;padding:16px;margin-top:12px}
+.ia-bloco{margin:12px 0}
+.ia-bloco:first-child{margin-top:0}
+.ia-bloco .rot{font-size:11px;font-weight:700;color:var(--roxo);text-transform:uppercase;letter-spacing:.8px;margin-bottom:2px}
+
+/* Desafios */
+.desafio{background:var(--card);border:1px solid var(--linha);border-radius:14px;padding:14px;margin-bottom:10px}
+.desafio.ativo{border-color:var(--ambr);box-shadow:0 0 0 1px var(--ambr)}
+
+/* Onboarding */
+#onb{position:fixed;inset:0;background:var(--bg);z-index:100;overflow-y:auto;padding:34px 20px 40px}
+#onb .logo{text-align:center;font-size:52px;margin:16px 0 6px}
+#onb h1{text-align:center;font-size:28px;font-weight:700;color:var(--roxo);letter-spacing:-.5px}
+#onb p.sub{text-align:center;color:var(--sub);margin:8px 0 26px;max-width:340px;margin-left:auto;margin-right:auto}
+.passo{max-width:440px;margin:0 auto}
+.mini{background:var(--card);border:1px solid var(--linha);border-radius:14px;padding:14px;margin-top:10px}
+.toast{position:fixed;bottom:94px;left:50%;transform:translateX(-50%);background:var(--txt);color:#fff;padding:11px 20px;border-radius:24px;font-weight:600;font-size:14px;z-index:200;box-shadow:0 6px 24px rgba(0,0,0,.18);opacity:0;transition:.25s;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(-6px)}
+.sec-titulo{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--sub);font-weight:700;margin:14px 4px 4px}
+
+/* Livro / retrospectiva */
+#livro{background:#faf8f4;color:#2a2233;padding:14px}
+@media print{
+  body{background:#fff}
+  .nav,.top,.no-print{display:none!important}
+  #app{padding:0;max-width:100%}
+  #livro{padding:0}
+  .livro-pag{page-break-after:always;box-shadow:none;border:none}
+}
+.livro-pag{background:#fff;color:#2a2233;border-radius:14px;padding:26px 22px;margin-bottom:14px;box-shadow:var(--sombra)}
+.livro-pag h2{color:var(--roxo);border-bottom:2px solid var(--rosa);padding-bottom:6px}
+.livro-pag .cap{font-size:12px;letter-spacing:2px;color:var(--rosa);font-weight:800;text-transform:uppercase}
+</style>
+</head>
+<body>
+
+<!-- ONBOARDING -->
+<div id="onb">
+  <div class="logo">🕊️</div>
+  <h1>Aliança 365</h1>
+  <p class="sub">O app que fortalece Casal, Filhos e Família através de Deus.</p>
+  <div class="passo" id="onb-passo"></div>
+</div>
+
+<!-- APP -->
+<div id="app" class="hidden">
+  <header class="top">
+    <div class="marca">🕊️ ALIANÇA 365</div>
+    <h1 id="hdr-familia">❤️ Família</h1>
+    <div class="data" id="hdr-data"></div>
+    <div class="streak">🔥 Sequência: <span id="hdr-streak">0</span> dias</div>
+  </header>
+
+  <!-- HOJE -->
+  <section id="tab-hoje" class="wrap"></section>
+  <!-- DIÁRIO -->
+  <section id="tab-diario" class="wrap hidden"></section>
+  <!-- LINHA DO TEMPO -->
+  <section id="tab-timeline" class="wrap hidden"></section>
+  <!-- IA -->
+  <section id="tab-ia" class="wrap hidden"></section>
+  <!-- MAIS (desafios, conquistas, livro, config) -->
+  <section id="tab-mais" class="wrap hidden"></section>
+
+  <nav class="nav">
+    <button data-tab="hoje" class="on"><span class="ic">🏠</span>Hoje</button>
+    <button data-tab="diario"><span class="ic">📖</span>Diário</button>
+    <button data-tab="timeline"><span class="ic">📅</span>Linha</button>
+    <button data-tab="ia"><span class="ic">✨</span>IA</button>
+    <button data-tab="mais"><span class="ic">⚙️</span>Mais</button>
+  </nav>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ ESTADO ============ */
+const LS="alianca365";
+let S=load();
+function load(){
+  try{return JSON.parse(localStorage.getItem(LS))||null}catch(e){return null}
+}
+function save(){localStorage.setItem(LS,JSON.stringify(S))}
+function novoEstado(){
+  return{
+    familia:"", conjuges:["",""], filhos:[],
+    criado:hoje(), streak:0, ultimoDia:null,
+    feito:{}, // {data:{casal:bool,familia:bool,filhos:bool,oracao:bool,palavra:bool,gratidao:bool}}
+    diario:[], timeline:[], gratidao:[],
+    contadores:{oracoes:0,leituras:0,jantares:0,jogos:0,memorias:0,oracaoRespondida:0},
+    desafioAtivo:null, desafiosFeitos:[],
+    conquistas:[],
+    geminiKey:"", geminiModel:"gemini-2.5-flash", retroTexto:"",
+    driveClientId:"", driveFolderId:"", driveEmail:"", driveAuto:false, driveUltimo:""
+  };
+}
+/* migração p/ estados antigos sem campos novos */
+function migrar(){
+  if(S.geminiKey===undefined)S.geminiKey="";
+  if(S.geminiModel===undefined)S.geminiModel="gemini-2.5-flash";
+  if(S.retroTexto===undefined)S.retroTexto="";
+  if(S.driveClientId===undefined)S.driveClientId="";
+  if(S.driveFolderId===undefined)S.driveFolderId="";
+  if(S.driveEmail===undefined)S.driveEmail="";
+  if(S.driveAuto===undefined)S.driveAuto=false;
+  if(S.driveUltimo===undefined)S.driveUltimo="";
+}
+
+/* ============ UTIL ============ */
+function hoje(){return new Date().toISOString().slice(0,10)}
+function dataBonita(d){
+  const dt=new Date(d+"T12:00:00");
+  return dt.toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+}
+function diaDoAno(){
+  const n=new Date(); const ini=new Date(n.getFullYear(),0,0);
+  return Math.floor((n-ini)/86400000);
+}
+function toast(m){
+  const t=document.getElementById("toast");
+  t.textContent=m;t.classList.add("show");
+  clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),2200);
+}
+function esc(s){return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function faixaEtaria(i){
+  if(i<=5)return"pequeno"; if(i<=9)return"crianca"; if(i<=12)return"pre"; return"adolescente";
+}
+
+/* ============ CONTEÚDO DIÁRIO (rotativo por dia do ano) ============ */
+const C_CASAL=[
+ "Façam um elogio sincero um ao outro.","Escrevam um bilhete de amor.",
+ "Orem de mãos dadas por 2 minutos.","Relembrem como se conheceram.",
+ "Digam 3 qualidades que admiram no outro.","Planejem um encontro esta semana.",
+ "Perdoem algo pequeno e sigam em frente.","Agradeçam a Deus pelo casamento.",
+ "Sonhem juntos: onde querem estar em 5 anos?","Deem um abraço de 20 segundos.",
+ "Leiam 1 Coríntios 13 juntos.","Contem um momento em que se sentiram amados."
+];
+const C_FAMILIA=[
+ "Jantem juntos sem celular.","Façam um piquenique na sala.",
+ "Assistam a um filme em família.","Joguem um jogo de tabuleiro.",
+ "Façam um passeio ao ar livre.","Cozinhem algo juntos.",
+ "Contem histórias da infância dos pais.","Façam uma noite sem telas.",
+ "Cada um diz do que é grato hoje.","Dancem uma música juntos na sala.",
+ "Organizem um cantinho da casa em equipe.","Façam uma caminhada e orem pelo bairro."
+];
+const C_ORACAO=[
+ "Orem por 3 minutos, cada um em voz alta.","Orem por uma família amiga.",
+ "Agradeçam por 3 bênçãos de hoje.","Orem pela escola e trabalho.",
+ "Peçam sabedoria a Deus para a semana.","Orem por quem está doente.",
+ "Louvem a Deus por Sua fidelidade.","Orem pelos sonhos de cada um."
+];
+const PALAVRA=[
+ ["Josué 24:15","Eu e minha casa serviremos ao Senhor."],
+ ["Provérbios 3:5","Confie no Senhor de todo o coração."],
+ ["Salmos 127:1","Se o Senhor não edificar a casa, em vão trabalham os construtores."],
+ ["1 Coríntios 13:4","O amor é paciente, o amor é bondoso."],
+ ["Filipenses 4:6","Não andem ansiosos por coisa alguma."],
+ ["Deuteronômio 6:7","Ensina-as a teus filhos."],
+ ["Salmos 133:1","Como é bom viverem unidos os irmãos!"],
+ ["Efésios 4:32","Sejam bondosos e compassivos uns com os outros."],
+ ["Mateus 6:33","Busquem em primeiro lugar o Reino de Deus."],
+ ["Salmos 23:1","O Senhor é o meu pastor, nada me faltará."],
+ ["Provérbios 22:6","Ensina a criança no caminho em que deve andar."],
+ ["Colossenses 3:14","Sobre tudo isto, porém, revistam-se do amor."]
+];
+
+/* Atividade por filho conforme idade */
+function atividadeFilho(f){
+  const g=faixaEtaria(f.idade); const d=diaDoAno();
+  const bank={
+    pequeno:[
+      {h:"Conte a história de Noé e a arca.",p:"O que Deus ensinou para Noé?"},
+      {h:"Conte a história de Davi e Golias.",p:"Deus é maior que nossos medos?"},
+      {h:"Cante uma música cristã infantil juntos.",p:"Você sente o amor de Deus?"},
+      {h:"Conte como Jesus acalmou a tempestade.",p:"A quem pedimos ajuda quando temos medo?"},
+      {h:"Desenhem juntos a criação do mundo.",p:"O que Deus fez que você mais gosta?"}
+    ],
+    crianca:[
+      {h:"Leiam a história de José do Egito.",p:"O que aprendemos sobre perdoar?"},
+      {h:"Leia a história de Davi (1 Samuel 17).",p:'O que aprendemos com a coragem de Davi?'},
+      {h:"Leiam sobre Daniel na cova dos leões.",p:"Como podemos ser fiéis como Daniel?"},
+      {h:"Contem uma parábola de Jesus.",p:"O que Jesus quis nos ensinar?"},
+      {h:"Leiam Salmos 23 juntos.",p:"Como Deus cuida de nós?"}
+    ],
+    pre:[
+      {h:"Leiam Provérbios 3 juntos.",p:"O que aprendemos hoje?"},
+      {h:"Leiam sobre os frutos do Espírito (Gálatas 5).",p:"Qual fruto você quer desenvolver?"},
+      {h:"Estudem o Sermão do Monte (Mateus 5).",p:"O que é ser bem-aventurado?"},
+      {h:"Leiam sobre a armadura de Deus (Efésios 6).",p:"Como nos protegemos do mal?"},
+      {h:"Leiam a história de Ester.",p:"Como Deus usa pessoas comuns?"}
+    ],
+    adolescente:[
+      {h:"Pergunte qual foi o melhor momento da semana.",p:"Orem por um sonho dele(a)."},
+      {h:"Conversem sobre um desafio que ele enfrenta.",p:"O que a fé diz sobre isso?"},
+      {h:"Leiam Provérbios sobre amizades.",p:"Como escolher boas companhias?"},
+      {h:"Pergunte como ele vê a presença de Deus na vida dele.",p:"Orem juntos por direção."},
+      {h:"Conversem sobre propósito e futuro.",p:"Que dons Deus deu a você?"}
+    ]
+  };
+  const arr=bank[g]; return arr[(d+ (f.nome?f.nome.length:0)) % arr.length];
+}
+
+/* ============ DESAFIOS SEMANAIS ============ */
+const DESAFIOS=[
+ {id:"gratidao",nome:"Semana da Gratidão",emoji:"🙏",desc:"Todos escrevem 3 agradecimentos."},
+ {id:"perdao",nome:"Semana do Perdão",emoji:"🤝",desc:"Cada um pede desculpas por algo."},
+ {id:"generosidade",nome:"Semana da Generosidade",emoji:"🎁",desc:"Façam uma boa ação juntos."},
+ {id:"biblia",nome:"Semana da Bíblia",emoji:"📖",desc:"Leitura em família todos os dias."},
+ {id:"semtelas",nome:"Semana sem Telas",emoji:"📵",desc:"Uma noite inteira juntos, sem telas."}
+];
+
+/* ============ CONQUISTAS ============ */
+const CONQUISTAS=[
+ {id:"seq30",emoji:"❤️",nome:"30 dias de sequência",meta:30,get:()=>S.streak},
+ {id:"or100",emoji:"🙏",nome:"100 orações",meta:100,get:()=>S.contadores.oracoes},
+ {id:"le50",emoji:"📖",nome:"50 leituras",meta:50,get:()=>S.contadores.leituras},
+ {id:"jan20",emoji:"👨‍👩‍👧",nome:"20 jantares juntos",meta:20,get:()=>S.contadores.jantares},
+ {id:"jog10",emoji:"🎮",nome:"10 noites de jogos",meta:10,get:()=>S.contadores.jogos},
+ {id:"mem100",emoji:"📷",nome:"100 memórias",meta:100,get:()=>S.contadores.memorias},
+ {id:"orResp",emoji:"⭐",nome:"1ª oração respondida",meta:1,get:()=>S.contadores.oracaoRespondida},
+ {id:"mes",emoji:"🏆",nome:"Família do Mês",meta:100,get:()=>Math.min(S.streak,100)}
+];
+
+/* ============ ONBOARDING ============ */
+let onbFilhos=[];
+function renderOnb(){
+  const el=document.getElementById("onb-passo");
+  el.innerHTML=`
+    <div class="mini">
+      <label>Sobrenome da família</label>
+      <input id="ob-fam" placeholder="Ex: Oliveira" value="${esc(S?S.familia:'')}">
+    </div>
+    <div class="mini">
+      <div class="sec-titulo">💍 O casal (centro de tudo)</div>
+      <label>Nome</label><input id="ob-c1" placeholder="Ex: João">
+      <label style="margin-top:8px;display:block">Nome</label><input id="ob-c2" placeholder="Ex: Maria">
+    </div>
+    <div class="mini">
+      <div class="sec-titulo">👦 Filhos (opcional)</div>
+      <p class="subtxt">O app adapta as atividades pela idade de cada um.</p>
+      <div id="ob-filhos"></div>
+      <div class="row" style="margin-top:8px">
+        <input id="ob-fn" placeholder="Nome do filho">
+        <input id="ob-fi" type="number" min="0" max="19" placeholder="Idade" style="max-width:90px">
+      </div>
+      <button class="btn-ghost" style="margin-top:8px;width:100%" onclick="addFilhoOnb()">+ Adicionar filho</button>
+    </div>
+    <button class="btn-primary" style="margin-top:16px" onclick="salvarOnb()">Começar nossa jornada 🕊️</button>
+  `;
+  renderFilhosOnb();
+}
+function renderFilhosOnb(){
+  const c=document.getElementById("ob-filhos");
+  c.innerHTML=onbFilhos.map((f,i)=>`<span class="chip">👦 ${esc(f.nome)} (${f.idade}a) <span class="x" onclick="rmFilhoOnb(${i})">✕</span></span>`).join("");
+}
+function addFilhoOnb(){
+  const n=document.getElementById("ob-fn").value.trim();
+  const i=parseInt(document.getElementById("ob-fi").value);
+  if(!n||isNaN(i)){toast("Preencha nome e idade");return}
+  onbFilhos.push({nome:n,idade:i});
+  document.getElementById("ob-fn").value="";document.getElementById("ob-fi").value="";
+  renderFilhosOnb();
+}
+function rmFilhoOnb(i){onbFilhos.splice(i,1);renderFilhosOnb()}
+function salvarOnb(){
+  const fam=document.getElementById("ob-fam").value.trim();
+  const c1=document.getElementById("ob-c1").value.trim();
+  const c2=document.getElementById("ob-c2").value.trim();
+  if(!fam){toast("Digite o sobrenome");return}
+  if(!c1||!c2){toast("Preencha o nome do casal");return}
+  if(!S)S=novoEstado();
+  S.familia=fam;S.conjuges=[c1,c2];S.filhos=onbFilhos.slice();
+  save();
+  document.getElementById("onb").classList.add("hidden");
+  document.getElementById("app").classList.remove("hidden");
+  registrarDia();
+  render();
+  toast("Bem-vindos, família "+fam+"! 🎉");
+}
+
+/* ============ SEQUÊNCIA ============ */
+function registrarDia(){
+  const h=hoje();
+  if(S.ultimoDia===h)return;
+  const ontem=new Date(Date.now()-86400000).toISOString().slice(0,10);
+  if(S.ultimoDia===ontem)S.streak++;
+  else S.streak=1;
+  S.ultimoDia=h;save();
+}
+
+/* ============ MEMBROS ============ */
+function todosMembros(){
+  return [...S.conjuges.filter(Boolean),...S.filhos.map(f=>f.nome)];
+}
+
+/* ============ TAREFAS DO DIA ============ */
+function feitoHoje(){
+  const h=hoje();
+  if(!S.feito[h])S.feito[h]={};
+  return S.feito[h];
+}
+function marcar(tipo){
+  const f=feitoHoje();
+  f[tipo]=!f[tipo];
+  if(f[tipo]){
+    if(tipo==="oracao")S.contadores.oracoes++;
+    if(tipo==="palavra")S.contadores.leituras++;
+    if(tipo==="familia")S.contadores.jantares++;
+    toast("Registrado! 🌟");
+    checarConquistas();
+  }else{
+    if(tipo==="oracao")S.contadores.oracoes=Math.max(0,S.contadores.oracoes-1);
+    if(tipo==="palavra")S.contadores.leituras=Math.max(0,S.contadores.leituras-1);
+    if(tipo==="familia")S.contadores.jantares=Math.max(0,S.contadores.jantares-1);
+  }
+  save();renderHoje();
+}
+function checarConquistas(){
+  CONQUISTAS.forEach(c=>{
+    if(c.get()>=c.meta && !S.conquistas.includes(c.id)){
+      S.conquistas.push(c.id);save();
+      toast(c.emoji+" Conquista: "+c.nome+"!");
+    }
+  });
+}
+
+/* ============ RENDER HOJE ============ */
+function render(){
+  document.getElementById("hdr-familia").textContent="❤️ Família "+S.familia;
+  document.getElementById("hdr-data").textContent="🌞 "+dataBonita(hoje());
+  document.getElementById("hdr-streak").textContent=S.streak;
+  renderHoje();
+}
+function renderHoje(){
+  const d=diaDoAno();
+  const f=feitoHoje();
+  const casal=C_CASAL[d%C_CASAL.length];
+  const fam=C_FAMILIA[d%C_FAMILIA.length];
+  const ora=C_ORACAO[d%C_ORACAO.length];
+  const pal=PALAVRA[d%PALAVRA.length];
+  const dias=Object.keys(S.feito).filter(k=>{const x=S.feito[k];return Object.values(x).some(Boolean)}).length;
+
+  let filhosHTML="";
+  if(S.filhos.length){
+    filhosHTML=S.filhos.map(fl=>{
+      const a=atividadeFilho(fl);
+      return `<div class="card pilar filhos">
+        <h2>👦 ${esc(fl.nome)} <span class="badge">(${fl.idade} anos)</span></h2>
+        <div class="tarefa">${esc(a.h)}</div>
+        <div class="subtxt">Pergunte: <b>"${esc(a.p)}"</b></div>
+      </div>`;
+    }).join("");
+  }else{
+    filhosHTML=`<div class="card pilar filhos"><h2>👦 Filhos</h2>
+      <p class="subtxt">Ainda sem filhos cadastrados. O casal é o centro! Você pode adicionar filhos em <b>Mais → Configurações</b> quando quiser.</p></div>`;
+  }
+
+  const desafioHTML=S.desafioAtivo?(()=>{
+    const ds=DESAFIOS.find(x=>x.id===S.desafioAtivo);
+    return `<div class="card" style="border:1px solid var(--ambr)">
+      <h2>${ds.emoji} ${ds.nome} <span class="badge">desafio da semana</span></h2>
+      <p class="subtxt">${ds.desc}</p></div>`;
+  })():"";
+
+  document.getElementById("tab-hoje").innerHTML=`
+    <div class="card" style="text-align:center;background:linear-gradient(120deg,var(--card),var(--card2))">
+      <div style="font-size:14px">🌞 <b>Bom dia, família ${esc(S.familia)}!</b></div>
+      <p class="subtxt" style="margin-top:4px">Dia ${dias||1} da nossa aliança com Deus.</p>
+    </div>
+
+    ${desafioHTML}
+
+    <div class="card pilar casal ${f.casal?'done':''}">
+      <div class="linha-tarefa" onclick="marcar('casal')">
+        <span class="check ${f.casal?'on':''}">${f.casal?'✓':''}</span>
+        <div><h2>💍 Casal <span class="badge">Missão do relacionamento</span></h2>
+        <div class="tarefa">${esc(casal)}</div></div>
+      </div>
+    </div>
+
+    <div class="card pilar familia ${f.familia?'done':''}">
+      <div class="linha-tarefa" onclick="marcar('familia')">
+        <span class="check ${f.familia?'on':''}">${f.familia?'✓':''}</span>
+        <div><h2>👨‍👩‍👧 Família <span class="badge">Missão da família</span></h2>
+        <div class="tarefa">${esc(fam)}</div></div>
+      </div>
+    </div>
+
+    ${filhosHTML}
+
+    <div class="card pilar oracao ${f.oracao?'done':''}">
+      <div class="linha-tarefa" onclick="marcar('oracao')">
+        <span class="check ${f.oracao?'on':''}">${f.oracao?'✓':''}</span>
+        <div><h2>🙏 Oração <span class="badge">Todos juntos</span></h2>
+        <div class="tarefa">${esc(ora)}</div></div>
+      </div>
+    </div>
+
+    <div class="card pilar palavra ${f.palavra?'done':''}">
+      <div class="linha-tarefa" onclick="marcar('palavra')">
+        <span class="check ${f.palavra?'on':''}">${f.palavra?'✓':''}</span>
+        <div><h2>📖 Palavra <span class="badge">Versículo do dia</span></h2>
+        <div class="ref">${pal[0]}</div>
+        <div class="verso">"${pal[1]}"</div></div>
+      </div>
+    </div>
+
+    <div class="card pilar gratidao">
+      <h2>🌙 Gratidão <span class="badge">Cada um registra algo</span></h2>
+      <p class="subtxt">Escolha quem vai registrar e escreva algo pelo qual é grato hoje.</p>
+      <select id="grat-quem" style="margin-top:8px">
+        ${todosMembros().map(m=>`<option>${esc(m)}</option>`).join("")}
+      </select>
+      <textarea id="grat-txt" placeholder="Hoje agradeço..."></textarea>
+      <button class="btn-primary" style="margin-top:8px" onclick="addGratidao()">Registrar gratidão 🌟</button>
+      ${(S.gratidao.filter(g=>g.data===hoje()).length)?
+        '<div class="sec-titulo" style="margin-top:12px">Gratidões de hoje</div>'+
+        S.gratidao.filter(g=>g.data===hoje()).map(g=>`<div class="diario-e"><span class="quem">${esc(g.quem)}</span><div>${esc(g.txt)}</div></div>`).join(""):""}
+    </div>
+  `;
+}
+function addGratidao(){
+  const quem=document.getElementById("grat-quem").value;
+  const txt=document.getElementById("grat-txt").value.trim();
+  if(!txt){toast("Escreva algo 🙂");return}
+  S.gratidao.push({quem,txt,data:hoje()});
+  feitoHoje().gratidao=true;save();
+  toast("Gratidão registrada! 🌙");renderHoje();autoBackup();
+}
+
+/* ============ DIÁRIO ============ */
+function renderDiario(){
+  document.getElementById("tab-diario").innerHTML=`
+    <div class="card">
+      <h2>📖 Diário da Família</h2>
+      <p class="subtxt">Todo mundo pode participar. Depois de um ano é emocionante ler novamente.</p>
+      <select id="di-quem" style="margin-top:10px">
+        ${todosMembros().map(m=>`<option>${esc(m)}</option>`).join("")}
+      </select>
+      <textarea id="di-txt" placeholder="Hoje eu..."></textarea>
+      <button class="btn-primary" style="margin-top:8px" onclick="addDiario()">Salvar no diário</button>
+    </div>
+    <div class="sec-titulo">Entradas (${S.diario.length})</div>
+    ${S.diario.length?S.diario.slice().reverse().map(e=>`
+      <div class="diario-e">
+        <span class="data">${dataBonita(e.data).split(",")[0]||e.data}</span>
+        <span class="quem">${esc(e.quem)}</span>
+        <div style="margin-top:4px">${esc(e.txt)}</div>
+      </div>`).join(""):'<p class="subtxt" style="padding:8px">Nenhuma entrada ainda. Comecem hoje! ✍️</p>'}
+  `;
+}
+function addDiario(){
+  const quem=document.getElementById("di-quem").value;
+  const txt=document.getElementById("di-txt").value.trim();
+  if(!txt){toast("Escreva algo 🙂");return}
+  S.diario.push({quem,txt,data:hoje()});save();
+  toast("Salvo no diário 📖");renderDiario();autoBackup();
+}
+
+/* ============ TIMELINE ============ */
+const TL_TIPOS=[
+ {v:"passeio",t:"🏖 Passeio"},{v:"foto",t:"📷 Foto/Memória"},
+ {v:"oracao",t:"🙏 Oração respondida"},{v:"marco",t:"👶 Marco do filho"},
+ {v:"aniversario",t:"🎂 Aniversário"},{v:"casamento",t:"💍 Aniversário de casamento"},
+ {v:"natal",t:"🎄 Natal"},{v:"batismo",t:"✝️ Batismo"},{v:"escola",t:"🏫 Primeiro dia na escola"},
+ {v:"outro",t:"⭐ Outro momento"}
+];
+function renderTimeline(){
+  const itens=S.timeline.slice().sort((a,b)=>b.data.localeCompare(a.data));
+  const anos={};
+  itens.forEach(i=>{const y=i.data.slice(0,4);(anos[y]=anos[y]||[]).push(i)});
+  let html=`
+    <div class="card">
+      <h2>📅 Linha do Tempo</h2>
+      <p class="subtxt">Registre os momentos marcantes. Tudo fica guardado.</p>
+      <label style="margin-top:10px;display:block">Tipo</label>
+      <select id="tl-tipo">${TL_TIPOS.map(t=>`<option value="${t.v}">${t.t}</option>`).join("")}</select>
+      <div class="row" style="margin-top:8px">
+        <input id="tl-titulo" placeholder="Título do momento">
+        <input id="tl-data" type="date" value="${hoje()}" style="max-width:150px">
+      </div>
+      <textarea id="tl-desc" placeholder="Descrição (opcional)"></textarea>
+      <label style="margin-top:8px;display:block">📷 Foto (opcional)</label>
+      <input id="tl-foto" type="file" accept="image/*" onchange="prevFoto(this)">
+      <img id="tl-prev" class="tl-foto hidden">
+      <button class="btn-primary" style="margin-top:10px" onclick="addTimeline()">Registrar momento ⭐</button>
+    </div>
+  `;
+  Object.keys(anos).sort((a,b)=>b-a).forEach(y=>{
+    html+=`<div class="sec-titulo" style="font-size:18px;color:var(--roxo2);margin-top:10px">${y}</div>`;
+    anos[y].forEach((it,idx)=>{
+      const tipo=TL_TIPOS.find(t=>t.v===it.tipo)||{t:"⭐"};
+      html+=`<div class="tl-item">
+        <div class="tl-linha"><div class="tl-dot"></div>${idx<anos[y].length-1?'<div class="tl-bar"></div>':''}</div>
+        <div class="tl-conteudo">
+          <div class="tl-data">${dataBonita(it.data)}</div>
+          <div style="font-weight:700;margin-top:2px">${tipo.t.split(" ")[0]} ${esc(it.titulo)}</div>
+          ${it.desc?`<div class="subtxt" style="margin-top:4px">${esc(it.desc)}</div>`:""}
+          ${it.foto?`<img class="tl-foto" src="${it.foto}">`:""}
+        </div>
+      </div>`;
+    });
+  });
+  if(!itens.length)html+='<p class="subtxt" style="padding:8px">Nenhum momento ainda. Registre o primeiro! ✨</p>';
+  document.getElementById("tab-timeline").innerHTML=html;
+}
+let fotoTmp=null;
+function prevFoto(inp){
+  const f=inp.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    // reduz tamanho p/ caber no localStorage
+    const img=new Image();
+    img.onload=()=>{
+      const cv=document.createElement("canvas");
+      const max=900;let{width:w,height:h}=img;
+      if(w>max){h=h*max/w;w=max}
+      cv.width=w;cv.height=h;cv.getContext("2d").drawImage(img,0,0,w,h);
+      fotoTmp=cv.toDataURL("image/jpeg",0.7);
+      const p=document.getElementById("tl-prev");p.src=fotoTmp;p.classList.remove("hidden");
+    };img.src=e.target.result;
+  };r.readAsDataURL(f);
+}
+function addTimeline(){
+  const titulo=document.getElementById("tl-titulo").value.trim();
+  const data=document.getElementById("tl-data").value||hoje();
+  const desc=document.getElementById("tl-desc").value.trim();
+  const tipo=document.getElementById("tl-tipo").value;
+  if(!titulo){toast("Dê um título");return}
+  S.timeline.push({titulo,data,desc,tipo,foto:fotoTmp});
+  if(fotoTmp)S.contadores.memorias++;
+  if(tipo==="oracao")S.contadores.oracaoRespondida++;
+  fotoTmp=null;save();checarConquistas();
+  toast("Momento registrado! ⭐");renderTimeline();autoBackup();
+}
+
+/* ============ IA FAMILIAR (base de regras local) ============ */
+const IA_REGRAS=[
+ {k:["ansios","ansiedade","medo","nervos","preocup"],idadeVaria:true,
+  vers:["Filipenses 4:6-7","Não andem ansiosos por coisa alguma; a paz de Deus guardará o coração de vocês."],
+  ora:"Senhor, acalma o coração do(a) nosso(a) filho(a). Tira o medo e enche de Tua paz. Amém.",
+  conv:{pequeno:"Abrace, fale baixinho: 'Deus está com você, não precisa ter medo'.",
+        crianca:"Pergunte o que está sentindo e lembre que Deus cuida dele(a).",
+        pre:"Ajude a nomear o que sente e leiam juntos que Deus dá paz.",
+        adolescente:"Ouça sem julgar. Valide o sentimento antes de aconselhar."},
+  ativ:"Respirem juntos 3 vezes bem devagar e orem entregando a preocupação a Deus."},
+ {k:["trist","chor","brig","sozinh","magoad","desanim"],idadeVaria:true,
+  vers:["Salmos 34:18","O Senhor está perto dos que têm o coração quebrantado."],
+  ora:"Deus, conforta o coração do(a) nosso(a) filho(a). Cura a tristeza e traz alegria. Amém.",
+  conv:{pequeno:"Dê colo e diga: 'Estou aqui com você, você é muito amado'.",
+        crianca:"Pergunte o que aconteceu e ajude a entender os sentimentos.",
+        pre:"Converse sobre a situação e sobre perdoar quem magoou.",
+        adolescente:"Ouça com atenção. Não minimize. Ofereça presença antes de conselho."},
+  ativ:"Façam algo que ele(a) ama e conversem sobre perdão e amizade."},
+ {k:["raiv","brav","teimos","desobedec","birra","grit"],idadeVaria:true,
+  vers:["Efésios 4:26","Não pequem; não deixem que o sol se ponha sobre a ira de vocês."],
+  ora:"Senhor, ajuda nossa família a lidar com a raiva com amor e paciência. Amém.",
+  conv:{pequeno:"Mantenha a calma. Nomeie: 'Você está bravo. Vamos respirar juntos'.",
+        crianca:"Ajude a expressar a raiva com palavras, não com atitudes.",
+        pre:"Converse sobre autocontrole como fruto do Espírito.",
+        adolescente:"Dê espaço, depois converse com respeito sobre limites e sentimentos."},
+  ativ:"Criem juntos um 'cantinho da calma' e combinem um gesto de paz."},
+ {k:["grat","feliz","alegr","conquist","venc","orgulh"],idadeVaria:false,
+  vers:["1 Tessalonicenses 5:18","Deem graças em todas as circunstâncias."],
+  ora:"Obrigado, Senhor, por essa alegria! Que ela nos aproxime mais de Ti. Amém.",
+  conv:{pequeno:"Comemore junto e diga que Deus se alegra com ele(a) também.",
+        crianca:"Celebre e ajude a agradecer a Deus pela conquista.",
+        pre:"Reconheça o esforço e conectem a gratidão à fé.",
+        adolescente:"Valorize a conquista e incentive a manter a humildade."},
+  ativ:"Escrevam juntos 3 coisas boas de hoje no Diário da Família."},
+ {k:["escola","prova","estud","nota","professor","dever"],idadeVaria:true,
+  vers:["Colossenses 3:23","Tudo o que fizerem, façam de todo o coração, como para o Senhor."],
+  ora:"Senhor, dá sabedoria e tranquilidade nos estudos do(a) nosso(a) filho(a). Amém.",
+  conv:{pequeno:"Incentive com carinho e torne o aprender uma brincadeira.",
+        crianca:"Pergunte o que aprendeu de bom hoje e elogie o esforço.",
+        pre:"Ajude a organizar os estudos sem pressão excessiva.",
+        adolescente:"Converse sobre metas e lembre que valor não é só nota."},
+  ativ:"Estudem 15 minutos juntos e terminem com uma oração pela escola."}
+];
+function iaResponder(txt){
+  const t=txt.toLowerCase();
+  let regra=IA_REGRAS.find(r=>r.k.some(k=>t.includes(k)));
+  // detecta idade citada
+  let idadeCit=(t.match(/(\d{1,2})\s*anos?/)||[])[1];
+  let faixa="crianca";
+  if(idadeCit)faixa=faixaEtaria(parseInt(idadeCit));
+  else if(t.includes("adolescen"))faixa="adolescente";
+  else if(t.includes("bebê")||t.includes("pequen"))faixa="pequeno";
+  if(!regra){
+    regra={vers:["Provérbios 3:5-6","Confie no Senhor de todo o coração e Ele endireitará as suas veredas."],
+      ora:"Senhor, guia nossa família nesse momento com Tua sabedoria e amor. Amém.",
+      conv:{pequeno:"Fale com carinho e ouça o coração dele(a).",crianca:"Converse com paciência e ouça.",pre:"Dialogue com respeito e abertura.",adolescente:"Ouça de verdade antes de aconselhar."},
+      ativ:"Reservem um tempo juntos para conversar e orar sobre isso."};
+  }
+  const conv=regra.conv[faixa]||regra.conv.crianca;
+  return blocoIA({referencia:regra.vers[0],versiculo:regra.vers[1],oracao:regra.ora,
+    comoConversar:conv,atividade:regra.ativ},
+    idadeCit?`${idadeCit} anos`:faixa,true);
+}
+/* monta o HTML da resposta (usado pela IA local e pela Gemini) */
+function blocoIA(r,alvo,offline){
+  return `
+    <div class="ia-resp">
+      <div class="ia-bloco"><div class="rot">📖 Versículo</div>
+        <div class="ref">${esc(r.referencia)}</div>
+        <div class="verso" style="font-size:15px">"${esc(r.versiculo)}"</div></div>
+      <div class="ia-bloco"><div class="rot">🙏 Oração</div><div>${esc(r.oracao)}</div></div>
+      <div class="ia-bloco"><div class="rot">💬 Como conversar${alvo?` (${esc(alvo)})`:""}</div><div>${esc(r.comoConversar)}</div></div>
+      <div class="ia-bloco"><div class="rot">🎯 Atividade para fazer juntos</div><div>${esc(r.atividade)}</div></div>
+      <div class="subtxt" style="margin-top:6px;font-size:10px">${offline?"💡 Resposta offline (base bíblica local). Adicione sua chave Gemini em Mais → Configurações para respostas por IA.":"✨ Gerado por IA (Google Gemini) · sempre valide à luz da Palavra."}</div>
+    </div>`;
+}
+/* contexto da família p/ personalizar o prompt */
+function contextoFamilia(){
+  let c=`Família ${S.familia}. Casal: ${S.conjuges.filter(Boolean).join(" e ")||"não informado"}.`;
+  if(S.filhos.length)c+=` Filhos: ${S.filhos.map(f=>`${f.nome} (${f.idade} anos)`).join(", ")}.`;
+  else c+=" Ainda sem filhos.";
+  return c;
+}
+/* chamada REAL à API Google Gemini */
+async function iaGemini(txt){
+  const key=(S.geminiKey||"").trim();
+  if(!key)throw new Error("SEM_CHAVE");
+  const model=S.geminiModel||"gemini-2.5-flash";
+  const url=`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
+  const sys=`Você é um conselheiro familiar cristão, acolhedor e bíblico, do app "Aliança 365".
+Contexto: ${contextoFamilia()}
+A partir da situação relatada pelos pais, responda SEMPRE em português do Brasil, com tom amoroso e prático.
+Adapte a linguagem à idade da criança/filho citada na situação (ou à faixa etária que fizer sentido).
+Use base cristã e a Bíblia. Nunca dê conselhos médicos; em casos graves, oriente procurar ajuda profissional.
+Retorne exatamente os campos pedidos.`;
+  const body={
+    systemInstruction:{parts:[{text:sys}]},
+    contents:[{role:"user",parts:[{text:txt}]}],
+    generationConfig:{
+      temperature:0.8,
+      responseMimeType:"application/json",
+      responseSchema:{
+        type:"OBJECT",
+        properties:{
+          referencia:{type:"STRING",description:"Referência bíblica, ex: Filipenses 4:6-7"},
+          versiculo:{type:"STRING",description:"Texto do versículo"},
+          oracao:{type:"STRING",description:"Oração curta para a família"},
+          comoConversar:{type:"STRING",description:"Como os pais devem conversar, adaptado à idade"},
+          atividade:{type:"STRING",description:"Uma atividade prática para fazerem juntos"},
+          faixa:{type:"STRING",description:"Idade ou faixa etária alvo, ex: 8 anos"}
+        },
+        required:["referencia","versiculo","oracao","comoConversar","atividade"]
+      }
+    },
+    safetySettings:[
+      {category:"HARM_CATEGORY_HARASSMENT",threshold:"BLOCK_ONLY_HIGH"},
+      {category:"HARM_CATEGORY_DANGEROUS_CONTENT",threshold:"BLOCK_ONLY_HIGH"}
+    ]
+  };
+  const resp=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+  if(!resp.ok){
+    let msg="";try{msg=(await resp.json())?.error?.message||""}catch(e){}
+    if(resp.status===400&&/API key/i.test(msg))throw new Error("CHAVE_INVALIDA");
+    if(resp.status===429)throw new Error("LIMITE");
+    throw new Error("HTTP "+resp.status+(msg?": "+msg:""));
+  }
+  const data=await resp.json();
+  const raw=data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if(!raw)throw new Error("Resposta vazia da IA.");
+  const r=JSON.parse(raw);
+  return blocoIA(r,r.faixa||"",false);
+}
+function renderIA(){
+  const temChave=!!(S.geminiKey||"").trim();
+  document.getElementById("tab-ia").innerHTML=`
+    <div class="card">
+      <h2>✨ IA Familiar</h2>
+      <p class="subtxt">Conte uma situação da família. Você recebe versículo, oração, como conversar e uma atividade — adaptados à idade de cada filho.</p>
+      <div class="chip" style="margin-top:10px;${temChave?'border-color:var(--verde)':'border-color:var(--ambr)'}">
+        ${temChave?'🟢 IA Gemini ativa':'🟡 Modo offline — sem chave Gemini'}
+      </div>
+      ${temChave?'':'<div class="subtxt" style="margin-top:6px;font-size:12px">Adicione sua chave em <b>Mais → Configurações</b> para respostas por IA real.</div>'}
+      <textarea id="ia-in" placeholder="Ex: Meu filho de 8 anos está muito ansioso com a prova." style="min-height:90px"></textarea>
+      <button class="btn-primary" id="ia-btn" style="margin-top:8px" onclick="iaGo()">Pedir orientação ✨</button>
+      <div id="ia-out"></div>
+      <div class="subtxt" style="margin-top:14px;font-size:11px">🔒 A situação é enviada à API do Google só quando há chave. Nada é guardado em servidor nosso.</div>
+    </div>
+  `;
+}
+async function iaGo(){
+  const t=document.getElementById("ia-in").value.trim();
+  if(!t){toast("Descreva a situação");return}
+  const out=document.getElementById("ia-out");
+  const btn=document.getElementById("ia-btn");
+  if((S.geminiKey||"").trim()){
+    btn.disabled=true;btn.textContent="Buscando orientação… ✨";
+    out.innerHTML='<p class="subtxt" style="padding:10px">🕊️ Orando e pensando com você…</p>';
+    try{
+      out.innerHTML=await iaGemini(t);
+    }catch(e){
+      let aviso="";
+      if(e.message==="CHAVE_INVALIDA")aviso="⚠️ Chave Gemini inválida. Confira em Configurações.";
+      else if(e.message==="LIMITE")aviso="⚠️ Limite da API atingido. Tente mais tarde.";
+      else aviso="⚠️ IA indisponível ("+esc(e.message)+"). Mostrando resposta offline.";
+      out.innerHTML='<div class="chip" style="border-color:var(--ambr)">'+aviso+'</div>'+iaResponder(t);
+    }finally{
+      btn.disabled=false;btn.textContent="Pedir orientação ✨";
+    }
+  }else{
+    out.innerHTML=iaResponder(t);
+  }
+}
+
+/* ============ GOOGLE DRIVE ============ */
+const DRIVE_SCOPE="https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email";
+let driveTok=null, driveTokExp=0, tokClient=null, tokResolve=null, tokReject=null;
+function initTok(){
+  if(!(window.google&&google.accounts&&google.accounts.oauth2))
+    throw new Error("SDK do Google ainda carregando — aguarde 2s e tente de novo.");
+  tokClient=google.accounts.oauth2.initTokenClient({
+    client_id:(S.driveClientId||"").trim(),
+    scope:DRIVE_SCOPE,
+    callback:r=>{
+      if(r.error){tokReject&&tokReject(new Error(r.error));return}
+      driveTok=r.access_token;driveTokExp=Date.now()+((r.expires_in||3600)*1000)-60000;
+      tokResolve&&tokResolve(driveTok);
+    }
+  });
+  return tokClient;
+}
+function getToken(interactive){
+  return new Promise((res,rej)=>{
+    if(driveTok&&Date.now()<driveTokExp){res(driveTok);return}
+    if(!(S.driveClientId||"").trim()){rej(new Error("Configure o OAuth Client ID primeiro."));return}
+    if(!tokClient)initTok();
+    tokResolve=res;tokReject=rej;
+    tokClient.requestAccessToken({prompt:interactive?"consent":""});
+  });
+}
+async function driveFetch(url,opts={}){
+  const t=await getToken(false);
+  opts.headers=Object.assign({},opts.headers,{Authorization:"Bearer "+t});
+  let r=await fetch(url,opts);
+  if(r.status===401){
+    driveTok=null;const t2=await getToken(true);
+    opts.headers.Authorization="Bearer "+t2;r=await fetch(url,opts);
+  }
+  return r;
+}
+async function driveFolder(){
+  if(S.driveFolderId){
+    const r=await driveFetch("https://www.googleapis.com/drive/v3/files/"+S.driveFolderId+"?fields=id,trashed");
+    if(r.ok){const d=await r.json();if(!d.trashed)return S.driveFolderId}
+  }
+  const q=encodeURIComponent("mimeType='application/vnd.google-apps.folder' and name='Aliança 365' and trashed=false");
+  const rs=await driveFetch("https://www.googleapis.com/drive/v3/files?q="+q+"&fields=files(id)&spaces=drive");
+  const ds=await rs.json();
+  if(ds.files&&ds.files.length){S.driveFolderId=ds.files[0].id;save();return S.driveFolderId}
+  const rc=await driveFetch("https://www.googleapis.com/drive/v3/files",{
+    method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({name:"Aliança 365",mimeType:"application/vnd.google-apps.folder"})});
+  const dc=await rc.json();S.driveFolderId=dc.id;save();return dc.id;
+}
+async function driveFind(name,folder){
+  const q=encodeURIComponent("name='"+name.replace(/'/g,"\\'")+"' and '"+folder+"' in parents and trashed=false");
+  const r=await driveFetch("https://www.googleapis.com/drive/v3/files?q="+q+"&fields=files(id)");
+  const d=await r.json();return (d.files&&d.files[0])?d.files[0].id:null;
+}
+async function driveMultipart(meta,mime,data,isB64){
+  const bd="a365"+Math.random().toString(36).slice(2);
+  const dl="\r\n--"+bd+"\r\n";
+  const body=dl+"Content-Type: application/json; charset=UTF-8\r\n\r\n"+JSON.stringify(meta)+
+    dl+"Content-Type: "+mime+"\r\n"+(isB64?"Content-Transfer-Encoding: base64\r\n":"")+"\r\n"+data+
+    "\r\n--"+bd+"--";
+  const r=await driveFetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id",{
+    method:"POST",headers:{"Content-Type":"multipart/related; boundary="+bd},body});
+  const d=await r.json();return d.id;
+}
+async function driveUploadJSON(name,obj,folder){
+  const id=await driveFind(name,folder);
+  const body=JSON.stringify(obj);
+  if(id){
+    await driveFetch("https://www.googleapis.com/upload/drive/v3/files/"+id+"?uploadType=media",{
+      method:"PATCH",headers:{"Content-Type":"application/json"},body});
+    return id;
+  }
+  return driveMultipart({name,parents:[folder],mimeType:"application/json"},"application/json",body,false);
+}
+async function driveUploadFoto(name,dataUrl,folder){
+  const mime=dataUrl.slice(5,dataUrl.indexOf(";"));
+  const b64=dataUrl.split(",")[1];
+  return driveMultipart({name,parents:[folder]},mime,b64,true);
+}
+function dstatus(m){const e=document.getElementById("drive-status");if(e)e.innerHTML=m}
+async function driveConectar(){
+  const cid=(document.getElementById("cfg-cid").value||"").trim();
+  if(!cid){toast("Cole o OAuth Client ID");return}
+  S.driveClientId=cid;save();
+  tokClient=null;driveTok=null;
+  dstatus("⏳ Abrindo login do Google…");
+  try{
+    await getToken(true);
+    const r=await driveFetch("https://www.googleapis.com/oauth2/v3/userinfo");
+    const u=await r.json();S.driveEmail=u.email||"conectado";save();
+    await driveFolder();
+    dstatus("🟢 Conectado como "+esc(S.driveEmail)+". Pasta 'Aliança 365' pronta.");
+    toast("Google Drive conectado! ☁️");renderMais();
+  }catch(e){dstatus("🔴 "+esc(e.message))}
+}
+function backupObj(){
+  const bk=JSON.parse(JSON.stringify(S));
+  delete bk.geminiKey;delete bk.driveClientId;  // não guardar segredos no arquivo
+  bk._app="alianca365";bk._data=new Date().toISOString();
+  return bk;
+}
+async function driveBackup(silent){
+  const folder=await driveFolder();
+  // sobe fotos novas da timeline como JPG na pasta
+  let novas=0;
+  for(const t of S.timeline){
+    if(t.foto&&!t.driveId){
+      try{t.driveId=await driveUploadFoto("foto-"+(t.data||hoje())+"-"+Math.random().toString(36).slice(2,6)+".jpg",t.foto,folder);novas++}catch(e){}
+    }
+  }
+  await driveUploadJSON("alianca365-backup.json",backupObj(),folder);
+  S.driveUltimo=new Date().toLocaleString("pt-BR");save();
+  if(!silent){dstatus("🟢 Backup enviado! "+novas+" foto(s) nova(s). "+S.driveUltimo);toast("Backup no Drive ✓")}
+  return novas;
+}
+async function driveBackupBtn(){
+  const cid=(document.getElementById("cfg-cid").value||"").trim();
+  if(cid){S.driveClientId=cid;save()}
+  dstatus("⏳ Enviando backup…");
+  try{await driveBackup(false)}catch(e){dstatus("🔴 "+esc(e.message))}
+}
+async function driveRestaurar(){
+  if(!confirm("Restaurar vai substituir os registros deste aparelho pelos do Drive. Continuar?"))return;
+  dstatus("⏳ Restaurando do Drive…");
+  try{
+    const folder=await driveFolder();
+    const id=await driveFind("alianca365-backup.json",folder);
+    if(!id){dstatus("🟡 Nenhum backup encontrado na pasta.");return}
+    const r=await driveFetch("https://www.googleapis.com/drive/v3/files/"+id+"?alt=media");
+    const bk=await r.json();
+    // preserva segredos/config locais deste aparelho
+    const keep={geminiKey:S.geminiKey,geminiModel:S.geminiModel,driveClientId:S.driveClientId,
+      driveFolderId:S.driveFolderId,driveEmail:S.driveEmail,driveAuto:S.driveAuto};
+    delete bk._app;delete bk._data;
+    S=Object.assign(bk,keep);save();migrar();
+    dstatus("🟢 Registros restaurados!");toast("Restaurado do Drive ✓");
+    render();renderMais();
+  }catch(e){dstatus("🔴 "+esc(e.message))}
+}
+function driveToggleAuto(v){S.driveAuto=v;save();toast(v?"Backup automático ligado":"Backup automático desligado")}
+async function autoBackup(){
+  if(!S.driveAuto||!S.driveEmail||!(S.driveClientId||"").trim())return;
+  try{await driveBackup(true)}catch(e){}
+}
+
+/* ============ MAIS ============ */
+function renderMais(){
+  const el=document.getElementById("tab-mais");
+  el.innerHTML=`
+    <div class="sec-titulo">Desafios Semanais</div>
+    <div class="card">
+      ${DESAFIOS.map(d=>`
+        <div class="desafio ${S.desafioAtivo===d.id?'ativo':''}">
+          <div style="font-weight:700">${d.emoji} ${d.nome}</div>
+          <div class="subtxt">${d.desc}</div>
+          <button class="${S.desafioAtivo===d.id?'btn-ok':'btn-mini'}" style="margin-top:8px"
+            onclick="ativarDesafio('${d.id}')">${S.desafioAtivo===d.id?'✓ Ativo — concluir':'Ativar'}</button>
+        </div>`).join("")}
+    </div>
+
+    <div class="sec-titulo">Conquistas (${S.conquistas.length}/${CONQUISTAS.length})</div>
+    <div class="conq-grid">
+      ${CONQUISTAS.map(c=>{
+        const v=Math.min(c.get(),c.meta);const on=S.conquistas.includes(c.id);
+        return `<div class="conq ${on?'':'locked'}">
+          <div class="emoji">${c.emoji}</div>
+          <div class="nome">${c.nome}</div>
+          <div class="prog">${v}/${c.meta}</div>
+          <div class="barra"><span style="width:${Math.round(v/c.meta*100)}%"></span></div>
+        </div>`;
+      }).join("")}
+    </div>
+
+    <div class="sec-titulo" style="margin-top:16px">📕 Livro da Nossa Família</div>
+    <div class="card">
+      <p class="subtxt">Ao completar 365 dias, geramos um álbum com fotos, orações, conversas, gratidões e uma retrospectiva escrita. Você pode gerar uma prévia a qualquer momento.</p>
+      <div style="margin-top:10px;font-weight:700">Progresso: ${Math.min(S.streak,365)}/365 dias 🔥</div>
+      <div class="barra" style="height:8px;margin-top:6px"><span style="width:${Math.round(Math.min(S.streak,365)/365*100)}%"></span></div>
+      <button class="btn-primary" style="margin-top:12px" onclick="gerarLivro()">📖 Gerar Livro (prévia)</button>
+    </div>
+
+    <div class="sec-titulo" style="margin-top:16px">✨ IA Familiar (Google Gemini)</div>
+    <div class="card">
+      <p class="subtxt">Cole sua chave da API Gemini para respostas por IA de verdade. A chave fica <b>só neste dispositivo</b> (nunca é publicada).</p>
+      <label style="margin-top:10px;display:block">Chave da API Gemini</label>
+      <div class="row">
+        <input id="cfg-key" type="password" placeholder="AIza..." value="${esc(S.geminiKey||'')}">
+        <button class="btn-mini" style="max-width:70px" onclick="verKey()">👁️</button>
+      </div>
+      <label style="margin-top:10px;display:block">Modelo</label>
+      <select id="cfg-model">
+        ${["gemini-2.5-flash","gemini-2.5-flash-lite","gemini-2.5-pro","gemini-flash-latest"]
+          .map(m=>`<option ${((S.geminiModel||'gemini-2.5-flash')===m)?'selected':''}>${m}</option>`).join("")}
+      </select>
+      <div class="row" style="margin-top:10px">
+        <button class="btn-primary" onclick="salvarKey()">Salvar chave</button>
+        <button class="btn-ghost" onclick="testarKey()" style="max-width:130px">Testar</button>
+      </div>
+      <div id="cfg-key-status" class="subtxt" style="margin-top:8px;font-size:12px"></div>
+      <p class="subtxt" style="margin-top:10px;font-size:11px">🔑 Pegue grátis em <b>aistudio.google.com/apikey</b>. Recomendado: no Google Cloud, restrinja a chave por "Referenciador HTTP" ao domínio do seu GitHub Pages.</p>
+    </div>
+
+    <div class="sec-titulo" style="margin-top:16px">☁️ Backup no Google Drive</div>
+    <div class="card">
+      <p class="subtxt">Guarde fotos e registros na sua conta Google. Cria a pasta <b>"Aliança 365"</b> no seu Drive. O app só acessa arquivos que ele mesmo cria.</p>
+      <label style="margin-top:10px;display:block">OAuth Client ID</label>
+      <input id="cfg-cid" placeholder="xxxxx.apps.googleusercontent.com" value="${esc(S.driveClientId||'')}">
+      <div class="chip" style="margin-top:10px;${S.driveEmail?'border-color:var(--verde)':''}">
+        ${S.driveEmail?'🟢 Conectado: '+esc(S.driveEmail):'⚪ Não conectado'}
+      </div>
+      <button class="btn-primary" style="margin-top:10px" onclick="driveConectar()">${S.driveEmail?'Reconectar Google Drive':'Conectar Google Drive'}</button>
+      <div class="row" style="margin-top:8px">
+        <button class="btn-ghost" onclick="driveBackupBtn()">⬆️ Enviar backup</button>
+        <button class="btn-ghost" onclick="driveRestaurar()">⬇️ Restaurar</button>
+      </div>
+      <label style="margin-top:12px;display:flex;align-items:center;gap:8px;font-weight:500;font-size:14px;color:var(--txt)">
+        <input type="checkbox" id="cfg-auto" ${S.driveAuto?'checked':''} onchange="driveToggleAuto(this.checked)" style="width:auto;margin:0"> Backup automático ao registrar
+      </label>
+      <div id="drive-status" class="subtxt" style="margin-top:8px;font-size:12px">${S.driveUltimo?'Último backup: '+esc(S.driveUltimo):''}</div>
+      <p class="subtxt" style="margin-top:10px;font-size:11px">🔑 Crie o Client ID em <b>console.cloud.google.com</b> → APIs e Serviços → Credenciais → ID do cliente OAuth (tipo Web). Veja o passo a passo enviado no chat.</p>
+    </div>
+
+    <div class="sec-titulo" style="margin-top:16px">⚙️ Configurações</div>
+    <div class="card">
+      <label>Sobrenome da família</label>
+      <input id="cfg-fam" value="${esc(S.familia)}">
+      <div class="sec-titulo" style="margin-top:12px">💍 Casal</div>
+      <input id="cfg-c1" value="${esc(S.conjuges[0])}" placeholder="Cônjuge 1">
+      <input id="cfg-c2" style="margin-top:6px" value="${esc(S.conjuges[1])}" placeholder="Cônjuge 2">
+      <div class="sec-titulo" style="margin-top:12px">👦 Filhos</div>
+      <div id="cfg-filhos">${S.filhos.map((f,i)=>`<span class="chip">👦 ${esc(f.nome)} (${f.idade}a) <span class="x" onclick="rmFilho(${i})">✕</span></span>`).join("")||'<span class="subtxt">Nenhum</span>'}</div>
+      <div class="row" style="margin-top:8px">
+        <input id="cfg-fn" placeholder="Nome do filho">
+        <input id="cfg-fi" type="number" min="0" max="19" placeholder="Idade" style="max-width:90px">
+      </div>
+      <button class="btn-ghost" style="margin-top:8px;width:100%" onclick="addFilho()">+ Adicionar filho</button>
+      <button class="btn-primary" style="margin-top:12px" onclick="salvarCfg()">Salvar configurações</button>
+      <button class="btn-mini" style="margin-top:10px;width:100%;color:var(--rosa)" onclick="resetar()">Apagar todos os dados</button>
+    </div>
+    <p class="subtxt" style="text-align:center;padding:10px;font-size:11px">🕊️ Aliança 365 — "Eu e minha casa serviremos ao Senhor."<br>Todos os dados ficam só neste dispositivo.</p>
+  `;
+}
+function verKey(){
+  const i=document.getElementById("cfg-key");
+  i.type=i.type==="password"?"text":"password";
+}
+function salvarKey(){
+  S.geminiKey=document.getElementById("cfg-key").value.trim();
+  S.geminiModel=document.getElementById("cfg-model").value;
+  save();
+  document.getElementById("cfg-key-status").innerHTML=S.geminiKey?"🟢 Chave salva. IA ativada!":"🟡 Chave removida — voltou ao modo offline.";
+  toast(S.geminiKey?"Chave salva ✓":"Modo offline");
+}
+async function testarKey(){
+  const st=document.getElementById("cfg-key-status");
+  S.geminiKey=document.getElementById("cfg-key").value.trim();
+  S.geminiModel=document.getElementById("cfg-model").value;save();
+  if(!S.geminiKey){st.innerHTML="🟡 Cole uma chave primeiro.";return}
+  st.innerHTML="⏳ Testando conexão com o Gemini…";
+  try{
+    await iaGemini("Meu filho de 7 anos está com medo do escuro.");
+    st.innerHTML="🟢 Funcionou! A IA está respondendo corretamente.";
+    toast("IA conectada! ✨");
+  }catch(e){
+    if(e.message==="CHAVE_INVALIDA")st.innerHTML="🔴 Chave inválida. Confira em aistudio.google.com/apikey.";
+    else if(e.message==="LIMITE")st.innerHTML="🟠 Limite atingido, mas a chave é válida.";
+    else st.innerHTML="🔴 Erro: "+esc(e.message);
+  }
+}
+function ativarDesafio(id){
+  if(S.desafioAtivo===id){S.desafioAtivo=null;if(!S.desafiosFeitos.includes(id))S.desafiosFeitos.push(id);toast("Desafio concluído! 🎉")}
+  else{S.desafioAtivo=id;toast("Desafio ativado! 💪")}
+  save();renderMais();renderHoje();
+}
+function addFilho(){
+  const n=document.getElementById("cfg-fn").value.trim();
+  const i=parseInt(document.getElementById("cfg-fi").value);
+  if(!n||isNaN(i)){toast("Preencha nome e idade");return}
+  S.filhos.push({nome:n,idade:i});save();renderMais();
+}
+function rmFilho(i){S.filhos.splice(i,1);save();renderMais()}
+function salvarCfg(){
+  S.familia=document.getElementById("cfg-fam").value.trim()||S.familia;
+  S.conjuges=[document.getElementById("cfg-c1").value.trim(),document.getElementById("cfg-c2").value.trim()];
+  save();render();toast("Configurações salvas ✓");
+}
+function resetar(){
+  if(confirm("Isso vai apagar TODOS os dados da família neste dispositivo. Tem certeza?")){
+    localStorage.removeItem(LS);location.reload();
+  }
+}
+
+/* ============ LIVRO DA FAMÍLIA ============ */
+function retrospectivaIA(){
+  const dias=S.streak;
+  const nMem=S.timeline.length;const nGrat=S.gratidao.length;const nDia=S.diario.length;
+  const fotos=S.timeline.filter(t=>t.foto).length;
+  const filhos=S.filhos.map(f=>f.nome).join(", ");
+  let t=`A família ${S.familia} caminhou com Deus por ${dias} ${dias===1?'dia':'dias'}. `;
+  if(S.conjuges[0]&&S.conjuges[1])t+=`${S.conjuges[0]} e ${S.conjuges[1]} escolheram, dia após dia, colocar o Senhor no centro do lar. `;
+  if(filhos)t+=`Junto de ${filhos}, cultivaram fé, amor e presença. `;
+  t+=`Ao longo dessa jornada, registraram ${nMem} ${nMem===1?'momento marcante':'momentos marcantes'}, `;
+  t+=`${fotos} ${fotos===1?'foto':'fotos'}, ${nGrat} ${nGrat===1?'gratidão':'gratidões'} e ${nDia} ${nDia===1?'reflexão no diário':'reflexões no diário'}. `;
+  t+=`Cada oração respondida, cada refeição sem pressa, cada história bíblica contada às crianças, teceu os fios de uma aliança que o tempo não apaga. `;
+  t+=`Que os próximos anos sejam ainda mais cheios da presença de Deus. "Eu e minha casa serviremos ao Senhor." (Josué 24:15)`;
+  return t;
+}
+/* resumo compacto da jornada p/ alimentar a IA */
+function resumoJornada(){
+  const fotos=S.timeline.filter(t=>t.foto).length;
+  let r=`${contextoFamilia()}\n`;
+  r+=`Dias de sequência: ${S.streak}. Orações: ${S.contadores.oracoes}. Leituras: ${S.contadores.leituras}. `;
+  r+=`Jantares juntos: ${S.contadores.jantares}. Memórias/fotos: ${fotos}. Conquistas: ${S.conquistas.length}.\n`;
+  if(S.timeline.length)r+=`Momentos marcantes: ${S.timeline.slice(0,12).map(t=>t.titulo).join("; ")}.\n`;
+  if(S.gratidao.length)r+=`Exemplos de gratidão: ${S.gratidao.slice(-8).map(g=>`${g.quem}: ${g.txt}`).join(" | ")}.\n`;
+  if(S.diario.length)r+=`Trechos do diário: ${S.diario.slice(-6).map(e=>`${e.quem}: ${e.txt}`).join(" | ")}.\n`;
+  return r;
+}
+/* gera a retrospectiva do Livro via Gemini (texto corrido) */
+async function iaRetrospectivaGemini(){
+  const key=(S.geminiKey||"").trim();
+  if(!key)throw new Error("SEM_CHAVE");
+  const model=S.geminiModel||"gemini-2.5-flash";
+  const url=`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
+  const sys=`Você escreve a retrospectiva emocionante do "Livro da Nossa Família" do app cristão Aliança 365.
+Escreva em português do Brasil, em 2 a 3 parágrafos (150 a 250 palavras), tom caloroso, poético e cristão, na terceira pessoa, celebrando a jornada da família com Deus.
+Use nomes e dados reais fornecidos. Termine com uma bênção curta e uma referência bíblica adequada. Não use listas; texto corrido. Não invente fatos além dos dados.`;
+  const body={
+    systemInstruction:{parts:[{text:sys}]},
+    contents:[{role:"user",parts:[{text:"Dados da família:\n"+resumoJornada()}]}],
+    generationConfig:{temperature:0.9}
+  };
+  const resp=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+  if(!resp.ok){
+    let msg="";try{msg=(await resp.json())?.error?.message||""}catch(e){}
+    if(resp.status===400&&/API key/i.test(msg))throw new Error("CHAVE_INVALIDA");
+    if(resp.status===429)throw new Error("LIMITE");
+    throw new Error("HTTP "+resp.status);
+  }
+  const data=await resp.json();
+  const txt=data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+  if(!txt)throw new Error("Resposta vazia.");
+  return txt;
+}
+/* dispara geração e atualiza a página do livro */
+async function reescreverRetro(){
+  const p=document.getElementById("retro-txt");
+  const btn=document.getElementById("retro-btn");
+  if(!(S.geminiKey||"").trim()){toast("Adicione a chave Gemini em Configurações");return}
+  if(btn){btn.disabled=true;btn.textContent="Escrevendo… ✨"}
+  if(p)p.innerHTML='<span class="subtxt">🕊️ A IA está escrevendo a história da sua família…</span>';
+  try{
+    const t=await iaRetrospectivaGemini();
+    S.retroTexto=t;save();
+    if(p)p.innerHTML=esc(t).replace(/\n+/g,"<br><br>");
+    toast("Retrospectiva gerada! ✨");
+  }catch(e){
+    if(p)p.innerHTML=esc(retrospectivaIA());
+    toast(e.message==="CHAVE_INVALIDA"?"Chave inválida":"IA indisponível — usei texto local");
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent=S.retroTexto?"✨ Reescrever com IA":"✨ Gerar com IA"}
+  }
+}
+function gerarLivro(){
+  const app=document.getElementById("app");
+  let livro=document.getElementById("livro");
+  if(!livro){livro=document.createElement("div");livro.id="livro";document.body.appendChild(livro)}
+  const gratsPorMembro={};
+  S.gratidao.forEach(g=>{(gratsPorMembro[g.quem]=gratsPorMembro[g.quem]||[]).push(g.txt)});
+  livro.innerHTML=`
+    <div style="padding:12px 4px 0" class="no-print">
+      <div class="row">
+        <button class="btn-primary" onclick="window.print()">🖨️ Salvar como PDF / Imprimir</button>
+        <button class="btn-ghost" onclick="fecharLivro()" style="max-width:120px">Voltar</button>
+      </div>
+      <p class="subtxt" style="text-align:center;padding:8px;font-size:11px;color:#8a7fb0">No diálogo de impressão, escolha "Salvar como PDF".</p>
+    </div>
+
+    <div class="livro-pag" style="text-align:center;padding-top:60px">
+      <div style="font-size:60px">🕊️</div>
+      <div class="cap">O Livro da Nossa Família</div>
+      <h1 style="color:var(--roxo);font-size:34px;margin:14px 0;border:none">Família ${esc(S.familia)}</h1>
+      <p style="color:#7a6a9a">Uma jornada de ${S.streak} dias com Deus</p>
+      <p style="margin-top:8px;color:#a99">${new Date().getFullYear()}</p>
+      <p style="margin-top:40px;font-style:italic;color:#6d28d9">"Eu e minha casa serviremos ao Senhor."<br>Josué 24:15</p>
+    </div>
+
+    <div class="livro-pag">
+      <div class="cap">Retrospectiva ${S.retroTexto?"· por IA ✨":""}</div>
+      <h2>Nossa Jornada</h2>
+      <p id="retro-txt" style="margin-top:12px;font-size:16px;line-height:1.8">${S.retroTexto?esc(S.retroTexto).replace(/\n+/g,"<br><br>"):esc(retrospectivaIA())}</p>
+      <button id="retro-btn" class="btn-ghost no-print" style="margin-top:12px;width:100%" onclick="reescreverRetro()">${S.retroTexto?"✨ Reescrever com IA":"✨ Gerar com IA"}</button>
+    </div>
+
+    ${S.timeline.filter(t=>t.foto).length?`
+    <div class="livro-pag">
+      <div class="cap">Memórias em Fotos</div>
+      <h2>📸 Momentos Marcantes</h2>
+      ${S.timeline.filter(t=>t.foto).map(t=>`
+        <div style="margin-top:14px">
+          <img src="${t.foto}" style="width:100%;border-radius:10px">
+          <div style="font-weight:700;margin-top:6px;color:#6d28d9">${esc(t.titulo)}</div>
+          <div style="font-size:12px;color:#998">${dataBonita(t.data)}</div>
+          ${t.desc?`<div style="font-size:14px;margin-top:2px">${esc(t.desc)}</div>`:""}
+        </div>`).join("")}
+    </div>`:""}
+
+    ${S.timeline.length?`
+    <div class="livro-pag">
+      <div class="cap">Linha do Tempo</div>
+      <h2>📅 Nossos Marcos</h2>
+      ${S.timeline.slice().sort((a,b)=>a.data.localeCompare(b.data)).map(t=>{
+        const tp=TL_TIPOS.find(x=>x.v===t.tipo)||{t:"⭐"};
+        return `<div style="margin-top:10px;padding-bottom:8px;border-bottom:1px solid #eee">
+          <b>${tp.t.split(" ")[0]} ${esc(t.titulo)}</b>
+          <span style="float:right;font-size:12px;color:#998">${dataBonita(t.data).split(",")[0]}</span></div>`;
+      }).join("")}
+    </div>`:""}
+
+    ${S.gratidao.length?`
+    <div class="livro-pag">
+      <div class="cap">Coração Grato</div>
+      <h2>🌙 Nossas Gratidões</h2>
+      ${Object.keys(gratsPorMembro).map(m=>`
+        <div style="margin-top:12px"><b style="color:#ec4899">${esc(m)}</b>
+          ${gratsPorMembro[m].map(g=>`<div style="margin-top:4px">• ${esc(g)}</div>`).join("")}
+        </div>`).join("")}
+    </div>`:""}
+
+    ${S.diario.length?`
+    <div class="livro-pag">
+      <div class="cap">Reflexões</div>
+      <h2>📖 Do Nosso Diário</h2>
+      ${S.diario.map(e=>`<div style="margin-top:12px">
+        <b style="color:#f59e0b">${esc(e.quem)}</b> <span style="font-size:12px;color:#998">${dataBonita(e.data).split(",")[0]}</span>
+        <div style="margin-top:2px">${esc(e.txt)}</div></div>`).join("")}
+    </div>`:""}
+
+    <div class="livro-pag">
+      <div class="cap">Troféus</div>
+      <h2>🌟 Nossas Conquistas</h2>
+      ${S.conquistas.length?CONQUISTAS.filter(c=>S.conquistas.includes(c.id)).map(c=>`
+        <div style="margin-top:10px;font-size:16px">${c.emoji} <b>${c.nome}</b></div>`).join(""):'<p style="margin-top:10px">A jornada está só começando. 💪</p>'}
+      <p style="margin-top:30px;text-align:center;font-style:italic;color:#6d28d9">Com amor,<br>Família ${esc(S.familia)} ❤️</p>
+    </div>
+  `;
+  app.classList.add("hidden");
+  livro.classList.remove("hidden");
+  window.scrollTo(0,0);
+  // auto-gera retrospectiva por IA na 1ª vez, se houver chave
+  if((S.geminiKey||"").trim() && !S.retroTexto)reescreverRetro();
+}
+function fecharLivro(){
+  document.getElementById("livro").classList.add("hidden");
+  document.getElementById("app").classList.remove("hidden");
+}
+
+/* ============ NAVEGAÇÃO ============ */
+document.querySelectorAll(".nav button").forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll(".nav button").forEach(x=>x.classList.remove("on"));
+    b.classList.add("on");
+    const tab=b.dataset.tab;
+    ["hoje","diario","timeline","ia","mais"].forEach(t=>
+      document.getElementById("tab-"+t).classList.toggle("hidden",t!==tab));
+    if(tab==="diario")renderDiario();
+    if(tab==="timeline")renderTimeline();
+    if(tab==="ia")renderIA();
+    if(tab==="mais")renderMais();
+    window.scrollTo(0,0);
+  };
+});
+
+/* ============ PWA (service worker + instalar) ============ */
+if("serviceWorker" in navigator){
+  window.addEventListener("load",()=>{
+    navigator.serviceWorker.register("./sw.js").catch(e=>console.warn("SW falhou:",e));
+  });
+}
+let deferredPrompt=null;
+window.addEventListener("beforeinstallprompt",e=>{
+  e.preventDefault();deferredPrompt=e;mostrarInstalar();
+});
+window.addEventListener("appinstalled",()=>{deferredPrompt=null;const b=document.getElementById("btn-instalar");if(b)b.remove();toast("App instalado! 🎉")});
+function mostrarInstalar(){
+  if(document.getElementById("btn-instalar"))return;
+  const b=document.createElement("button");
+  b.id="btn-instalar";b.className="btn-primary";
+  b.textContent="📲 Instalar Aliança 365";
+  b.style.cssText="position:fixed;left:50%;transform:translateX(-50%);bottom:78px;width:auto;max-width:92%;z-index:40;box-shadow:0 6px 24px rgba(91,75,214,.35)";
+  b.onclick=async()=>{
+    if(!deferredPrompt)return;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt=null;b.remove();
+  };
+  document.body.appendChild(b);
+}
+
+/* ============ INIT ============ */
+if(S&&S.familia){
+  migrar();
+  document.getElementById("onb").classList.add("hidden");
+  document.getElementById("app").classList.remove("hidden");
+  registrarDia();render();
+}else{
+  renderOnb();
+}
+</script>
+</body>
+</html>
