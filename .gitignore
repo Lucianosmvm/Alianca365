@@ -1,0 +1,6 @@
+
+# Segredos assinatura Android — NUNCA commitar
+signing.keystore
+signing-key-info.txt
+*.keystore
+Aliança 365 - Google Play package/
