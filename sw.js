@@ -1,5 +1,7 @@
 /* Aliança 365 — Service Worker (offline app shell) */
-const CACHE = "alianca365-v1";
+/* IMPORTANTE: bumpar esta versão a cada release (v2, v3...) para forçar
+   atualização do app-shell nos aparelhos já instalados. */
+const CACHE = "alianca365-v2";
 const SHELL = [
   "./",
   "./index.html",
