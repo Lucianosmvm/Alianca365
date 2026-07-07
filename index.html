@@ -647,13 +647,14 @@ function renderTimeline(){
           <div style="font-weight:700;margin-top:2px">${tipo.t.split(" ")[0]} ${esc(it.titulo)}</div>
           ${it.quem?`<div class="subtxt" style="margin-top:2px;font-size:12px">por ${esc(it.quem)}</div>`:""}
           ${it.desc?`<div class="subtxt" style="margin-top:4px">${esc(it.desc)}</div>`:""}
-          ${it.foto?`<img class="tl-foto" src="${it.foto}">`:""}
+          ${fotoImg(it)}
         </div>
       </div>`;
     });
   });
   if(!itens.length)html+='<p class="subtxt" style="padding:8px">Nenhum momento ainda. Registre o primeiro! ✨</p>';
   document.getElementById("tab-timeline").innerHTML=html;
+  lazyFotos(document.getElementById("tab-timeline"));
 }
 let fotoTmp=null;
 function prevFoto(inp){
@@ -967,7 +968,7 @@ function recalcDerivados(st){
   const c={oracoes:0,leituras:0,jantares:0,jogos:(st.contadores&&st.contadores.jogos)||0,memorias:0,oracaoRespondida:0};
   for(const d in (st.feito||{})){const f=st.feito[d]||{};
     if(f.oracao)c.oracoes++; if(f.palavra)c.leituras++; if(f.familia)c.jantares++;}
-  for(const t of (st.timeline||[])){if(t.foto)c.memorias++; if(t.tipo==="oracao")c.oracaoRespondida++;}
+  for(const t of (st.timeline||[])){if(temFoto(t))c.memorias++; if(t.tipo==="oracao")c.oracaoRespondida++;}
   st.contadores=c;
   // streak = maior sequência de dias ativos terminando no último dia registrado
   const dias=Object.keys(st.feito||{}).filter(k=>Object.values(st.feito[k]||{}).some(Boolean)).sort();
@@ -984,9 +985,11 @@ function unirLista(a,b){
   [...(a||[]),...(b||[])].forEach(r=>{
     if(!r)return; if(!r.id)r.id=uid();
     const ex=map.get(r.id);
-    // se o mesmo id existir sem foto de um lado e com foto do outro, mantém a foto
-    if(!ex)map.set(r.id,r);
-    else if(!ex.foto&&r.foto)map.set(r.id,r);
+    if(!ex){map.set(r.id,r);return}
+    // mesmo registro em 2 aparelhos: completa foto/driveId de qualquer lado
+    if(r.driveId&&!ex.driveId)ex.driveId=r.driveId;
+    if(r.foto&&!ex.foto)ex.foto=r.foto;
+    if(ex.driveId)delete ex.foto; // já está no Drive; não guarda base64 local
   });
   return [...map.values()].sort((x,y)=>((x.data||"")<(y.data||"")?-1:1));
 }
@@ -1018,6 +1021,33 @@ function mergeInto(remote){
   CONQUISTAS.forEach(c=>{if(c.get()>=c.meta&&!S.conquistas.includes(c.id))S.conquistas.push(c.id)});
   save();
 }
+/* ---- Fotos: guardadas no Drive, carregadas sob demanda (poupa memória do aparelho) ---- */
+const _fotoCache={}; // driveId -> objectURL (só nesta sessão)
+function temFoto(t){return !!(t&&(t.foto||t.driveId))}
+async function carregarFoto(driveId){
+  if(_fotoCache[driveId])return _fotoCache[driveId];
+  if(!(driveTok&&Date.now()<driveTokExp))throw new Error("sem sessão do Drive");
+  const r=await driveFetch("https://www.googleapis.com/drive/v3/files/"+driveId+"?alt=media");
+  if(!r.ok)throw new Error("falha ao baixar foto");
+  const u=URL.createObjectURL(await r.blob());_fotoCache[driveId]=u;return u;
+}
+function fotoImg(t,cls,style){
+  const c=cls||"tl-foto";
+  if(t.foto)return `<img class="${c}" src="${t.foto}"${style?' style="'+style+'"':''}>`;
+  if(t.driveId)return `<img class="${c} foto-drive" data-drive="${esc(t.driveId)}" alt="foto" style="min-height:80px;background:rgba(0,0,0,.06);border-radius:10px;${style||''}">`;
+  return "";
+}
+function lazyFotos(root){
+  (root||document).querySelectorAll("img.foto-drive[data-drive]").forEach(img=>{
+    const id=img.getAttribute("data-drive");img.removeAttribute("data-drive");
+    carregarFoto(id).then(u=>{img.src=u}).catch(()=>{
+      const d=document.createElement("div");d.className="subtxt";
+      d.style.cssText="font-size:12px;padding:6px;opacity:.7";
+      d.textContent="📷 foto no Drive — sincronize para ver";
+      if(img.parentNode)img.parentNode.replaceChild(d,img);
+    });
+  });
+}
 async function driveBackup(silent){
   const folder=await driveFolder();
   // 1. puxa o que os outros aparelhos já salvaram e mescla (nada é perdido)
@@ -1028,11 +1058,15 @@ async function driveBackup(silent){
       if(rr.ok){const remote=await rr.json();delete remote._app;delete remote._data;mergeInto(remote);}
     }
   }catch(e){}
-  // 2. sobe fotos novas da timeline como JPG na pasta
+  // 2. sobe fotos novas e descarta o base64 local (fica só no Drive -> poupa memória)
   let novas=0;
   for(const t of S.timeline){
     if(t.foto&&!t.driveId){
-      try{t.driveId=await driveUploadFoto("foto-"+(t.data||hoje())+"-"+Math.random().toString(36).slice(2,6)+".jpg",t.foto,folder);novas++}catch(e){}
+      try{
+        const did=await driveUploadFoto("foto-"+(t.data||hoje())+"-"+Math.random().toString(36).slice(2,6)+".jpg",t.foto,folder);
+        _fotoCache[did]=t.foto; // mantém visível nesta sessão sem re-baixar
+        t.driveId=did;delete t.foto;novas++;
+      }catch(e){}
     }
   }
   // 3. publica o estado unido
@@ -1154,7 +1188,7 @@ function renderMais(){
 
     <div class="sec-titulo" style="margin-top:16px">💾 Backup em arquivo</div>
     <div class="card">
-      <p class="subtxt">Baixe um arquivo <b>.json</b> com todos os registros e guarde onde quiser (Drive, e-mail, pen drive). Funciona offline, sem login. As fotos vão dentro do arquivo.</p>
+      <p class="subtxt">Baixe um arquivo <b>.json</b> com todos os registros e guarde onde quiser (e-mail, pen drive). Funciona offline, sem login. Fotos já sincronizadas ficam no Drive; só as ainda não enviadas vão dentro do arquivo.</p>
       <div class="row" style="margin-top:10px">
         <button class="btn-primary" onclick="exportarArquivo()">⬇️ Baixar backup</button>
         <button class="btn-ghost" onclick="document.getElementById('cfg-file').click()">⬆️ Restaurar de arquivo</button>
@@ -1257,7 +1291,7 @@ function resetar(){
 function retrospectivaIA(){
   const dias=S.streak;
   const nMem=S.timeline.length;const nGrat=S.gratidao.length;const nDia=S.diario.length;
-  const fotos=S.timeline.filter(t=>t.foto).length;
+  const fotos=S.timeline.filter(temFoto).length;
   const filhos=S.filhos.map(f=>f.nome).join(", ");
   let t=`A família ${S.familia} caminhou com Deus por ${dias} ${dias===1?'dia':'dias'}. `;
   if(S.conjuges[0]&&S.conjuges[1])t+=`${S.conjuges[0]} e ${S.conjuges[1]} escolheram, dia após dia, colocar o Senhor no centro do lar. `;
@@ -1270,7 +1304,7 @@ function retrospectivaIA(){
 }
 /* resumo compacto da jornada p/ alimentar a IA */
 function resumoJornada(){
-  const fotos=S.timeline.filter(t=>t.foto).length;
+  const fotos=S.timeline.filter(temFoto).length;
   let r=`${contextoFamilia()}\n`;
   r+=`Dias de sequência: ${S.streak}. Orações: ${S.contadores.oracoes}. Leituras: ${S.contadores.leituras}. `;
   r+=`Jantares juntos: ${S.contadores.jantares}. Memórias/fotos: ${fotos}. Conquistas: ${S.conquistas.length}.\n`;
@@ -1355,13 +1389,13 @@ function gerarLivro(){
       <button id="retro-btn" class="btn-ghost no-print" style="margin-top:12px;width:100%" onclick="reescreverRetro()">${S.retroTexto?"✨ Reescrever com IA":"✨ Gerar com IA"}</button>
     </div>
 
-    ${S.timeline.filter(t=>t.foto).length?`
+    ${S.timeline.filter(temFoto).length?`
     <div class="livro-pag">
       <div class="cap">Memórias em Fotos</div>
       <h2>📸 Momentos Marcantes</h2>
-      ${S.timeline.filter(t=>t.foto).map(t=>`
+      ${S.timeline.filter(temFoto).map(t=>`
         <div style="margin-top:14px">
-          <img src="${t.foto}" style="width:100%;border-radius:10px">
+          ${fotoImg(t,"","width:100%;border-radius:10px")}
           <div style="font-weight:700;margin-top:6px;color:#6d28d9">${esc(t.titulo)}</div>
           <div style="font-size:12px;color:#998">${dataBonita(t.data)}</div>
           ${t.desc?`<div style="font-size:14px;margin-top:2px">${esc(t.desc)}</div>`:""}
@@ -1409,6 +1443,7 @@ function gerarLivro(){
   `;
   app.classList.add("hidden");
   livro.classList.remove("hidden");
+  lazyFotos(livro);
   window.scrollTo(0,0);
   // auto-gera retrospectiva por IA na 1ª vez, se houver chave
   if((S.geminiKey||"").trim() && !S.retroTexto)reescreverRetro();
@@ -1466,8 +1501,14 @@ if(S&&S.familia){
   document.getElementById("onb").classList.add("hidden");
   document.getElementById("app").classList.remove("hidden");
   registrarDia();render();
+  prewarmDrive();
 }else{
   renderOnb();
+}
+// pega token silencioso (se já autorizado antes) e recarrega fotos do Drive na tela
+async function prewarmDrive(){
+  if(!(S&&S.driveEmail&&(S.driveClientId||"").trim()))return;
+  try{await getToken(false);lazyFotos(document);}catch(e){}
 }
 </script>
 </body>
