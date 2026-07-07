@@ -216,7 +216,14 @@ let S=load();
 function load(){
   try{return JSON.parse(localStorage.getItem(LS))||null}catch(e){return null}
 }
-function save(){localStorage.setItem(LS,JSON.stringify(S))}
+function save(){
+  try{localStorage.setItem(LS,JSON.stringify(S))}
+  catch(e){
+    // cota do aparelho cheia (muitas fotos base64). Avisa em vez de perder em silêncio.
+    try{toast("⚠️ Memória do aparelho cheia. Sincronize e evite novas fotos aqui.")}catch(_){}
+    console.warn("save falhou:",e);
+  }
+}
 function novoEstado(){
   return{
     familia:"", conjuges:["",""], filhos:[],
@@ -240,9 +247,14 @@ function migrar(){
   if(S.driveEmail===undefined)S.driveEmail="";
   if(S.driveAuto===undefined)S.driveAuto=false;
   if(S.driveUltimo===undefined)S.driveUltimo="";
+  // ids estáveis p/ sincronizar entre aparelhos sem duplicar/perder
+  ["diario","timeline","gratidao"].forEach(k=>{
+    (S[k]||[]).forEach(r=>{if(r&&!r.id)r.id=uid()});
+  });
 }
 
 /* ============ UTIL ============ */
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
 function hoje(){return new Date().toISOString().slice(0,10)}
 function dataBonita(d){
   const dt=new Date(d+"T12:00:00");
@@ -559,7 +571,7 @@ function addGratidao(){
   const quem=document.getElementById("grat-quem").value;
   const txt=document.getElementById("grat-txt").value.trim();
   if(!txt){toast("Escreva algo 🙂");return}
-  S.gratidao.push({quem,txt,data:hoje()});
+  S.gratidao.push({id:uid(),quem,txt,data:hoje()});
   feitoHoje().gratidao=true;save();
   toast("Gratidão registrada! 🌙");renderHoje();autoBackup();
 }
@@ -589,7 +601,7 @@ function addDiario(){
   const quem=document.getElementById("di-quem").value;
   const txt=document.getElementById("di-txt").value.trim();
   if(!txt){toast("Escreva algo 🙂");return}
-  S.diario.push({quem,txt,data:hoje()});save();
+  S.diario.push({id:uid(),quem,txt,data:hoje()});save();
   toast("Salvo no diário 📖");renderDiario();autoBackup();
 }
 
@@ -615,6 +627,8 @@ function renderTimeline(){
         <input id="tl-titulo" placeholder="Título do momento">
         <input id="tl-data" type="date" value="${hoje()}" style="max-width:150px">
       </div>
+      <label style="margin-top:8px;display:block">Quem registrou</label>
+      <select id="tl-quem">${todosMembros().map(m=>`<option>${esc(m)}</option>`).join("")}</select>
       <textarea id="tl-desc" placeholder="Descrição (opcional)"></textarea>
       <label style="margin-top:8px;display:block">📷 Foto (opcional)</label>
       <input id="tl-foto" type="file" accept="image/*" onchange="prevFoto(this)">
@@ -631,6 +645,7 @@ function renderTimeline(){
         <div class="tl-conteudo">
           <div class="tl-data">${dataBonita(it.data)}</div>
           <div style="font-weight:700;margin-top:2px">${tipo.t.split(" ")[0]} ${esc(it.titulo)}</div>
+          ${it.quem?`<div class="subtxt" style="margin-top:2px;font-size:12px">por ${esc(it.quem)}</div>`:""}
           ${it.desc?`<div class="subtxt" style="margin-top:4px">${esc(it.desc)}</div>`:""}
           ${it.foto?`<img class="tl-foto" src="${it.foto}">`:""}
         </div>
@@ -662,8 +677,9 @@ function addTimeline(){
   const data=document.getElementById("tl-data").value||hoje();
   const desc=document.getElementById("tl-desc").value.trim();
   const tipo=document.getElementById("tl-tipo").value;
+  const quem=(document.getElementById("tl-quem")||{}).value||"";
   if(!titulo){toast("Dê um título");return}
-  S.timeline.push({titulo,data,desc,tipo,foto:fotoTmp});
+  S.timeline.push({id:uid(),titulo,data,desc,tipo,quem,foto:fotoTmp});
   if(fotoTmp)S.contadores.memorias++;
   if(tipo==="oracao")S.contadores.oracaoRespondida++;
   fotoTmp=null;save();checarConquistas();
@@ -945,48 +961,138 @@ function backupObj(){
   bk._app="alianca365";bk._data=new Date().toISOString();
   return bk;
 }
+/* ---- Motor de sincronização (une aparelhos sem perder registro) ---- */
+function recalcDerivados(st){
+  // contadores derivam do dado-base -> recalcula p/ não contar em dobro no merge
+  const c={oracoes:0,leituras:0,jantares:0,jogos:(st.contadores&&st.contadores.jogos)||0,memorias:0,oracaoRespondida:0};
+  for(const d in (st.feito||{})){const f=st.feito[d]||{};
+    if(f.oracao)c.oracoes++; if(f.palavra)c.leituras++; if(f.familia)c.jantares++;}
+  for(const t of (st.timeline||[])){if(t.foto)c.memorias++; if(t.tipo==="oracao")c.oracaoRespondida++;}
+  st.contadores=c;
+  // streak = maior sequência de dias ativos terminando no último dia registrado
+  const dias=Object.keys(st.feito||{}).filter(k=>Object.values(st.feito[k]||{}).some(Boolean)).sort();
+  if(!dias.length){st.streak=0;st.ultimoDia=null;}
+  else{
+    const set=new Set(dias),last=dias[dias.length-1];
+    let n=0,cur=new Date(last+"T12:00:00");
+    while(set.has(cur.toISOString().slice(0,10))){n++;cur=new Date(cur.getTime()-86400000);}
+    st.streak=n;st.ultimoDia=last;
+  }
+}
+function unirLista(a,b){
+  const map=new Map();
+  [...(a||[]),...(b||[])].forEach(r=>{
+    if(!r)return; if(!r.id)r.id=uid();
+    const ex=map.get(r.id);
+    // se o mesmo id existir sem foto de um lado e com foto do outro, mantém a foto
+    if(!ex)map.set(r.id,r);
+    else if(!ex.foto&&r.foto)map.set(r.id,r);
+  });
+  return [...map.values()].sort((x,y)=>((x.data||"")<(y.data||"")?-1:1));
+}
+function mergeInto(remote){
+  if(!remote||typeof remote!=="object")return;
+  // config: mantém a deste aparelho, completa buracos com o remoto
+  S.familia=S.familia||remote.familia||"";
+  if(!(S.conjuges&&S.conjuges.some(Boolean))&&remote.conjuges)S.conjuges=remote.conjuges;
+  const nomes=new Set((S.filhos||[]).map(f=>f.nome));
+  (remote.filhos||[]).forEach(f=>{if(f&&!nomes.has(f.nome)){S.filhos.push(f);nomes.add(f.nome)}});
+  if(remote.criado&&(!S.criado||remote.criado<S.criado))S.criado=remote.criado;
+  // feito: união por data/tarefa (true vence)
+  S.feito=S.feito||{};
+  for(const d in (remote.feito||{})){
+    S.feito[d]=S.feito[d]||{};
+    const rf=remote.feito[d]||{};
+    for(const t in rf)if(rf[t])S.feito[d][t]=true;
+  }
+  // listas de registros: união por id
+  S.diario=unirLista(S.diario,remote.diario);
+  S.timeline=unirLista(S.timeline,remote.timeline);
+  S.gratidao=unirLista(S.gratidao,remote.gratidao);
+  // conjuntos
+  S.desafiosFeitos=[...new Set([...(S.desafiosFeitos||[]),...(remote.desafiosFeitos||[])])];
+  S.conquistas=[...new Set([...(S.conquistas||[]),...(remote.conquistas||[])])];
+  if(!S.retroTexto)S.retroTexto=remote.retroTexto||"";
+  // recalcula contadores/streak do estado unido e reavalia conquistas
+  recalcDerivados(S);
+  CONQUISTAS.forEach(c=>{if(c.get()>=c.meta&&!S.conquistas.includes(c.id))S.conquistas.push(c.id)});
+  save();
+}
 async function driveBackup(silent){
   const folder=await driveFolder();
-  // sobe fotos novas da timeline como JPG na pasta
+  // 1. puxa o que os outros aparelhos já salvaram e mescla (nada é perdido)
+  try{
+    const rid=await driveFind("alianca365-backup.json",folder);
+    if(rid){
+      const rr=await driveFetch("https://www.googleapis.com/drive/v3/files/"+rid+"?alt=media");
+      if(rr.ok){const remote=await rr.json();delete remote._app;delete remote._data;mergeInto(remote);}
+    }
+  }catch(e){}
+  // 2. sobe fotos novas da timeline como JPG na pasta
   let novas=0;
   for(const t of S.timeline){
     if(t.foto&&!t.driveId){
       try{t.driveId=await driveUploadFoto("foto-"+(t.data||hoje())+"-"+Math.random().toString(36).slice(2,6)+".jpg",t.foto,folder);novas++}catch(e){}
     }
   }
+  // 3. publica o estado unido
   await driveUploadJSON("alianca365-backup.json",backupObj(),folder);
   S.driveUltimo=new Date().toLocaleString("pt-BR");save();
-  if(!silent){dstatus("🟢 Backup enviado! "+novas+" foto(s) nova(s). "+S.driveUltimo);toast("Backup no Drive ✓")}
+  render();
+  if(!silent){dstatus("🟢 Sincronizado! "+novas+" foto(s) nova(s). "+S.driveUltimo);toast("Sincronizado ✓");renderMais();}
   return novas;
 }
 async function driveBackupBtn(){
   const cid=(document.getElementById("cfg-cid").value||"").trim();
   if(cid){S.driveClientId=cid;save()}
-  dstatus("⏳ Enviando backup…");
+  dstatus("⏳ Sincronizando…");
   try{await driveBackup(false)}catch(e){dstatus("🔴 "+esc(e.message))}
 }
 async function driveRestaurar(){
-  if(!confirm("Restaurar vai substituir os registros deste aparelho pelos do Drive. Continuar?"))return;
-  dstatus("⏳ Restaurando do Drive…");
+  if(!confirm("Isso junta (mescla) os registros do Drive com os deste aparelho. Nada é apagado. Continuar?"))return;
+  dstatus("⏳ Sincronizando com o Drive…");
   try{
     const folder=await driveFolder();
     const id=await driveFind("alianca365-backup.json",folder);
     if(!id){dstatus("🟡 Nenhum backup encontrado na pasta.");return}
     const r=await driveFetch("https://www.googleapis.com/drive/v3/files/"+id+"?alt=media");
     const bk=await r.json();
-    // preserva segredos/config locais deste aparelho
-    const keep={geminiKey:S.geminiKey,geminiModel:S.geminiModel,driveClientId:S.driveClientId,
-      driveFolderId:S.driveFolderId,driveEmail:S.driveEmail,driveAuto:S.driveAuto};
     delete bk._app;delete bk._data;
-    S=Object.assign(bk,keep);save();migrar();
-    dstatus("🟢 Registros restaurados!");toast("Restaurado do Drive ✓");
+    mergeInto(bk);
+    dstatus("🟢 Sincronizado do Drive!");toast("Sincronizado ✓");
     render();renderMais();
   }catch(e){dstatus("🔴 "+esc(e.message))}
 }
-function driveToggleAuto(v){S.driveAuto=v;save();toast(v?"Backup automático ligado":"Backup automático desligado")}
+function driveToggleAuto(v){S.driveAuto=v;save();toast(v?"Sincronização automática ligada":"Sincronização automática desligada")}
 async function autoBackup(){
   if(!S.driveAuto||!S.driveEmail||!(S.driveClientId||"").trim())return;
   try{await driveBackup(true)}catch(e){}
+}
+/* ---- Backup em arquivo (sem login) ---- */
+function exportarArquivo(){
+  const blob=new Blob([JSON.stringify(backupObj(),null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;a.download="alianca365-"+hoje()+".json";
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  toast("Backup baixado ✓");
+}
+function importarArquivo(input){
+  const f=input.files&&input.files[0];if(!f)return;
+  if(!confirm("Isso junta (mescla) os registros do arquivo com os deste aparelho. Nada é apagado. Continuar?")){input.value="";return}
+  const rd=new FileReader();
+  rd.onload=()=>{
+    try{
+      const bk=JSON.parse(rd.result);
+      if(bk._app&&bk._app!=="alianca365")throw new Error("não é um backup do Aliança 365");
+      delete bk._app;delete bk._data;
+      mergeInto(bk);
+      render();renderMais();toast("Registros mesclados ✓");
+    }catch(e){toast("Arquivo inválido: "+e.message)}
+    finally{input.value=""}
+  };
+  rd.readAsText(f);
 }
 
 /* ============ MAIS ============ */
@@ -1046,9 +1152,20 @@ function renderMais(){
       <p class="subtxt" style="margin-top:10px;font-size:11px">🔑 Pegue grátis em <b>aistudio.google.com/apikey</b>. Recomendado: no Google Cloud, restrinja a chave por "Referenciador HTTP" ao domínio do seu GitHub Pages.</p>
     </div>
 
-    <div class="sec-titulo" style="margin-top:16px">☁️ Backup no Google Drive</div>
+    <div class="sec-titulo" style="margin-top:16px">💾 Backup em arquivo</div>
     <div class="card">
-      <p class="subtxt">Guarde fotos e registros na sua conta Google. Cria a pasta <b>"Aliança 365"</b> no seu Drive. O app só acessa arquivos que ele mesmo cria.</p>
+      <p class="subtxt">Baixe um arquivo <b>.json</b> com todos os registros e guarde onde quiser (Drive, e-mail, pen drive). Funciona offline, sem login. As fotos vão dentro do arquivo.</p>
+      <div class="row" style="margin-top:10px">
+        <button class="btn-primary" onclick="exportarArquivo()">⬇️ Baixar backup</button>
+        <button class="btn-ghost" onclick="document.getElementById('cfg-file').click()">⬆️ Restaurar de arquivo</button>
+      </div>
+      <input id="cfg-file" type="file" accept="application/json,.json" style="display:none" onchange="importarArquivo(this)">
+    </div>
+
+    <div class="sec-titulo" style="margin-top:16px">☁️ Sincronizar via Google Drive</div>
+    <div class="card">
+      <p class="subtxt">Mantém os registros da família iguais em todos os aparelhos. Cada aparelho <b>junta</b> o que os outros salvaram — ninguém apaga o registro do outro.</p>
+      <p class="subtxt" style="margin-top:6px;font-size:12px;background:rgba(0,0,0,.04);padding:8px;border-radius:8px">👨‍👩‍👦 <b>Para a família toda ver os mesmos dados:</b> usem <b>a mesma conta Google</b> no app (a "conta da família"), nos 3 aparelhos. Contas diferentes = pastas separadas, não se juntam.</p>
       <label style="margin-top:10px;display:block">OAuth Client ID</label>
       <input id="cfg-cid" placeholder="xxxxx.apps.googleusercontent.com" value="${esc(S.driveClientId||'')}">
       <div class="chip" style="margin-top:10px;${S.driveEmail?'border-color:var(--verde)':''}">
@@ -1056,11 +1173,11 @@ function renderMais(){
       </div>
       <button class="btn-primary" style="margin-top:10px" onclick="driveConectar()">${S.driveEmail?'Reconectar Google Drive':'Conectar Google Drive'}</button>
       <div class="row" style="margin-top:8px">
-        <button class="btn-ghost" onclick="driveBackupBtn()">⬆️ Enviar backup</button>
-        <button class="btn-ghost" onclick="driveRestaurar()">⬇️ Restaurar</button>
+        <button class="btn-ghost" onclick="driveBackupBtn()">🔄 Sincronizar agora</button>
+        <button class="btn-ghost" onclick="driveRestaurar()">⬇️ Baixar e juntar</button>
       </div>
       <label style="margin-top:12px;display:flex;align-items:center;gap:8px;font-weight:500;font-size:14px;color:var(--txt)">
-        <input type="checkbox" id="cfg-auto" ${S.driveAuto?'checked':''} onchange="driveToggleAuto(this.checked)" style="width:auto;margin:0"> Backup automático ao registrar
+        <input type="checkbox" id="cfg-auto" ${S.driveAuto?'checked':''} onchange="driveToggleAuto(this.checked)" style="width:auto;margin:0"> Sincronizar automático ao registrar
       </label>
       <div id="drive-status" class="subtxt" style="margin-top:8px;font-size:12px">${S.driveUltimo?'Último backup: '+esc(S.driveUltimo):''}</div>
       <p class="subtxt" style="margin-top:10px;font-size:11px">🔑 Crie o Client ID em <b>console.cloud.google.com</b> → APIs e Serviços → Credenciais → ID do cliente OAuth (tipo Web). Veja o passo a passo enviado no chat.</p>
